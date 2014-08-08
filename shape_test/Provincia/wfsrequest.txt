@@ -1,0 +1,1 @@
+http://www.mosp.gba.gov.ar/geoserver/Geodesia/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=Geodesia:Provincia&maxFeatures=50&outputFormat=SHAPE-ZIP
