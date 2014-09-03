@@ -69,7 +69,7 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
           stroke: stroke,
           text: new ol.style.Text({
             font: '12px Calibri,sans-serif',
-            text: feature.get('compartido'),
+            text: Math.round(feature.get('compartido')/10)/100+'km',
             fill: textFill,
             stroke: textStroke
           })
@@ -134,6 +134,7 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
       $scope.source_union.clear();
     }
     var feature = $scope.ol_features[$scope.proceso_indices];
+    var desde_nombre = feature.getProperties().NOMBRE;
     var id = _.uniqueId('feature_');
 
     if(preferences.visual){
@@ -161,20 +162,23 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
 
     var perimeter_main = jsts_main.getLength();
 
+    var feature_main = feature;
+
     $scope.source.forEachFeatureInExtent(buffer,function(feature){
+      if(feature.getId() === feature_main.getId())
+        return;
       var jsts_local = $scope.feature_a_jsts(feature);
       var perimeter_local = jsts_local.getLength();
 
-      console.log('Perimetro local',perimeter_local);
 
       var interseccion = jsts_local.intersection(jsts_main),
           perimeter_union = jsts_local.union(jsts_main).getLength();
 
       var interseccion_perimeter = (perimeter_local + perimeter_main) - perimeter_union;
+      var hasta_nombre = feature.getProperties().NOMBRE;
 
-
-      console.log('Perimetro compartido',interseccion_perimeter);
-      if(preferences.visual && interseccion_perimeter > 0){
+      console.log('Perimetro compartido',desde_nombre,hasta_nombre,interseccion_perimeter);
+      if(preferences.visual && !interseccion.isEmpty()){
         $scope.source_vecinos.addFeature(feature);
         ol.extent.extend(extent_base,feature.getGeometry().getExtent());
         var line = new jsts.geom.LineString(interseccion.getCoordinates(),interseccion.getPrecisionModel()),
