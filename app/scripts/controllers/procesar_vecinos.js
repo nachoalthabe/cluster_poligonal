@@ -125,6 +125,8 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
     );
   }
 
+  var intersecciones = {};
+
   $scope.proceso_indices = 0;
   $scope.crear_indices = function(){
     if(preferences.visual_clear){
@@ -167,23 +169,57 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
     $scope.source.forEachFeatureInExtent(buffer,function(feature){
       if(feature.getId() === feature_main.getId())
         return;
-      var jsts_local = $scope.feature_a_jsts(feature);
-      var perimeter_local = jsts_local.getLength();
 
+      var vecinos_principal = feature_main.get('_vecinos') || {},
+          vecinos_local = feature.get('_vecinos') || {};
 
-      var interseccion = jsts_local.intersection(jsts_main),
-          perimeter_union = jsts_local.union(jsts_main).getLength();
+      if(!vecinos_principal[feature.getId()]){
+        var jsts_local = $scope.feature_a_jsts(feature);
+        var perimeter_local = jsts_local.getLength();
 
-      var interseccion_perimeter = (perimeter_local + perimeter_main) - perimeter_union;
-      var hasta_nombre = feature.getProperties().NOMBRE;
+        var interseccion = jsts_local.intersection(jsts_main),
+            perimeter_union = jsts_local.union(jsts_main).getLength();
 
-      console.log('Perimetro compartido',desde_nombre,hasta_nombre,interseccion_perimeter);
-      if(preferences.visual && !interseccion.isEmpty()){
+        var interseccion_perimeter = (perimeter_local + perimeter_main) - perimeter_union;
+        var hasta_nombre = feature.getProperties().NOMBRE;
+
+        //Si son vecinos
+        if(!interseccion.isEmpty()){
+          var vecinos_principal = feature_main.get('_vecinos') || {},
+              vecinos_local = feature.get('_vecinos') || {};
+
+          vecinos_principal[feature.getId()] = interseccion_perimeter;
+          vecinos_local[feature_main.getId()] = interseccion_perimeter;
+
+          feature_main.set('_vecinos',vecinos_principal);
+          feature.set('_vecinos',vecinos_local);
+
+          if(preferences.visual){
+            if(!intersecciones[feature.getId()])
+              intersecciones[feature.getId()] = {};
+            if(!intersecciones[feature_main.getId()])
+              intersecciones[feature_main.getId()] = {};
+
+            intersecciones[feature_main.getId()][feature.getId()] = intersecciones[feature.getId()][feature_main.getId()] = {
+              geom: interseccion,
+              length: interseccion_perimeter
+            };
+          }
+
+        };
+
+        console.log('Perimetro compartido',desde_nombre,hasta_nombre,interseccion_perimeter);
+      };
+
+      if(preferences.visual && vecinos_local[feature_main.getId()]){
         $scope.source_vecinos.addFeature(feature);
         ol.extent.extend(extent_base,feature.getGeometry().getExtent());
-        var line = new jsts.geom.LineString(interseccion.getCoordinates(),interseccion.getPrecisionModel()),
+
+        var interseccion = intersecciones[feature.getId()][feature_main.getId()];
+
+        var line = new jsts.geom.LineString(interseccion.geom.getCoordinates(),interseccion.geom.getPrecisionModel()),
             frontera = $scope.jsts_a_feature(line);
-        frontera.set('compartido',interseccion_perimeter);
+        frontera.set('compartido',interseccion.length);
         $scope.source_union.addFeature(frontera);
       }
     })
