@@ -15,13 +15,8 @@
     "angular-bootstrap": "~0.11.0",
     "js-shapefile-to-geojson": "https://github.com/wavded/js-shapefile-to-geojson.git",
     "proj4": "~2.2.1",
-<<<<<<< HEAD
-    "jsts": "https://github.com/nachoalthabe/jsts.git#~0.13.4",
-    "underscore": "~1.6.0"
-=======
     "underscore": "~1.6.0",
     "jsts": "https://github.com/nachoalthabe/jsts"
->>>>>>> 019b32f7a817025ac63aaf09059af83891cc3b5a
   },
   "devDependencies": {
     "angular-mocks": "1.2.16",
