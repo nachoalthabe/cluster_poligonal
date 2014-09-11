@@ -34,11 +34,11 @@ angular.module('frontApp')
         });
         if(geojson){
           features.parse_geojson(geojson).then(function(){
-            $location.path('/shape');
+            $location.path('/calcular_vecinos');
           })
         }else{
           features.parse_shp(shape,dbf).then(function(){
-            $location.path('/shape');
+            $location.path('/calcular_vecinos');
           })
         }
       }

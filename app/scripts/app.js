@@ -32,9 +32,21 @@ angular
         templateUrl: 'views/index.html',
         controller: 'IndexCtrl'
       })
-      .when('/shape', {
-        templateUrl: 'views/shape.html',
-        controller: 'PreviewShapeCtrl'
+      .when('/calcular_vecinos', {
+        templateUrl: 'views/procesar_vecinos.html',
+        controller: 'ProcesarVecinosCtrl'
+      })
+      .when('/juntar', {
+        templateUrl: 'views/juntar.html',
+        controller: 'JuntarCtrl'
+      })
+      .when('/separar', {
+        templateUrl: 'views/separar.html',
+        controller: 'SepararCtrl'
+      })
+      .when('/buscar_semillas', {
+        templateUrl: 'views/buscar_semillas.html',
+        controller: 'BuscarSemillasCtrl'
       })
       .otherwise({
         redirectTo: '/'

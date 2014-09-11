@@ -7,79 +7,9 @@
  * # ProcesarVecinosCtrl
  * Controller of the frontApp
  */
-angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,features,preferences) {
+angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,features,preferences,$location) {
   $scope.preferences = preferences;
   $scope.porcent = 0;
-
-  $scope.source = features.get_source();
-  $scope.ol_features = $scope.source.getFeatures();
-
-  $scope.rTree = new jsts.index.strtree.STRtree();
-
-
-  $scope.source_active = new ol.source.Vector();
-  $scope.layer_active = new ol.layer.Vector({
-    source: $scope.source_active,
-    style: new ol.style.Style({
-      fill: new ol.style.Fill({
-        color: [255,0,0,.3]
-      })
-    })
-  });
-  $scope.$parent.map.addLayer($scope.layer_active);
-
-  $scope.source_buffer = new ol.source.Vector();
-  $scope.layer_buffer = new ol.layer.Vector({
-    source: $scope.source_buffer,
-    style: new ol.style.Style({
-      fill: new ol.style.Fill({
-        color: [0,0,0,.3]
-      })
-    })
-  });
-  $scope.$parent.map.addLayer($scope.layer_buffer);
-
-  $scope.source_vecinos = new ol.source.Vector();
-  $scope.layer_vecinos = new ol.layer.Vector({
-    source: $scope.source_vecinos,
-    style: new ol.style.Style({
-      fill: new ol.style.Fill({
-        color: [0,0,255,.1]
-      })
-    })
-  });
-  $scope.$parent.map.addLayer($scope.layer_vecinos);
-
-  $scope.source_union = new ol.source.Vector();
-  $scope.layer_union = new ol.layer.Vector({
-    source: $scope.source_union,
-    style: (function() {
-      var stroke = new ol.style.Stroke({
-        color: 'black'
-      });
-      var textStroke = new ol.style.Stroke({
-        color: '#fff',
-        width: 3
-      });
-      var textFill = new ol.style.Fill({
-        color: '#000'
-      });
-      return function(feature, resolution) {
-        return [new ol.style.Style({
-          stroke: stroke,
-          text: new ol.style.Text({
-            font: '12px Calibri,sans-serif',
-            text: Math.round(feature.get('compartido')/10)/100+'km',
-            fill: textFill,
-            stroke: textStroke
-          })
-        })];
-      };
-    })()
-  });
-  $scope.$parent.map.addLayer($scope.layer_union);
-
-  $scope.geom_process = 0;
 
   $scope.calculate_extent = function(feature){
 
@@ -109,15 +39,11 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
       write_jsts = new jsts.io.WKTWriter();
 
   $scope.feature_a_jsts = function(feature){
-    var properties = feature.getProperties();
-    if(!properties.jsts){
-      properties.jsts = reader_jsts.read(
-        ol_wkt.writeFeature(feature)
-      );
-      feature.setProperties(properties);
-    }
-    return properties.jsts;
+    return reader_jsts.read(
+      ol_wkt.writeFeature(feature)
+    );
   }
+
 
   $scope.jsts_a_feature = function(jsts){
     return ol_wkt.readFeature(
@@ -173,7 +99,7 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
       var vecinos_principal = feature_main.get('_vecinos') || {},
           vecinos_local = feature.get('_vecinos') || {};
 
-      if(!vecinos_principal[feature.getId()]){
+      if(typeof vecinos_principal[feature.getId()] == 'undefined'){
         var jsts_local = $scope.feature_a_jsts(feature);
         var perimeter_local = jsts_local.getLength();
 
@@ -185,6 +111,7 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
 
         //Si son vecinos
         if(!interseccion.isEmpty()){
+          console.log('Perimetro compartido',desde_nombre,hasta_nombre,interseccion_perimeter);
           var vecinos_principal = feature_main.get('_vecinos') || {},
               vecinos_local = feature.get('_vecinos') || {};
 
@@ -194,33 +121,31 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
           feature_main.set('_vecinos',vecinos_principal);
           feature.set('_vecinos',vecinos_local);
 
-          if(preferences.visual){
-            if(!intersecciones[feature.getId()])
-              intersecciones[feature.getId()] = {};
-            if(!intersecciones[feature_main.getId()])
-              intersecciones[feature_main.getId()] = {};
+          if(!intersecciones[feature.getId()])
+            intersecciones[feature.getId()] = {};
+          if(!intersecciones[feature_main.getId()])
+            intersecciones[feature_main.getId()] = {};
 
-            intersecciones[feature_main.getId()][feature.getId()] = intersecciones[feature.getId()][feature_main.getId()] = {
-              geom: interseccion,
-              length: interseccion_perimeter
-            };
-          }
+          intersecciones[feature_main.getId()][feature.getId()] = intersecciones[feature.getId()][feature_main.getId()] = {
+            geom: interseccion,
+            length: interseccion_perimeter
+          };
 
         };
-
-        console.log('Perimetro compartido',desde_nombre,hasta_nombre,interseccion_perimeter);
       };
-
-      if(preferences.visual && vecinos_local[feature_main.getId()]){
+      vecinos_local = feature.get('_vecinos') || {};
+      if(preferences.visual && (typeof vecinos_local[feature_main.getId()] != 'undefined') && vecinos_local[feature_main.getId()] >= 0){
         $scope.source_vecinos.addFeature(feature);
         ol.extent.extend(extent_base,feature.getGeometry().getExtent());
 
-        var interseccion = intersecciones[feature.getId()][feature_main.getId()];
+        /*
+        interseccion = intersecciones[feature.getId()][feature_main.getId()];
 
         var line = new jsts.geom.LineString(interseccion.geom.getCoordinates(),interseccion.geom.getPrecisionModel()),
             frontera = $scope.jsts_a_feature(line);
         frontera.set('compartido',interseccion.length);
         $scope.source_union.addFeature(frontera);
+        */
       }
     })
 
@@ -256,6 +181,9 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
         setTimeout(function(){
           $scope.crear_indices();
         },100);
+    }else{
+      features.update_current();
+      $scope.listo = true;
     }
 
     if(!$scope.$$phase){
@@ -263,7 +191,27 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
     }
   }
 
+  $scope.listo = false;
+
   $scope.init = function(){
+    $scope.crear_indices();
+  }
+
+  $scope.proximo = function(){
+    preferences.map.removeLayer($scope.layer_active);
+    preferences.map.removeLayer($scope.layer_buffer);
+    preferences.map.removeLayer($scope.layer_vecinos);
+    preferences.map.removeLayer($scope.layer_union);
+    try {
+      preferences.view.fitExtent($scope.source.getExtent());
+    } catch (variable) {
+      // continue;
+    }
+    $location.path('juntar');
+  }
+
+  $scope.init_all = function(){
+    preferences.debug = false;
     $scope.crear_indices();
   }
 
@@ -283,4 +231,103 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
     var buffer = ol_wkt.readFeature(buffer_wkt);
     $scope.source_buffer.addFeature(buffer);
   }
+
+  $scope.ready = function(){
+      $scope.source = features.get_source();
+      $scope.ol_features = $scope.source.getFeatures();
+
+
+      $scope.source_active = new ol.source.Vector();
+      $scope.layer_active = new ol.layer.Vector({
+        source: $scope.source_active,
+        style: new ol.style.Style({
+          fill: new ol.style.Fill({
+            color: [255,0,0,.3]
+          })
+        })
+      });
+      preferences.map.addLayer($scope.layer_active);
+
+      $scope.source_buffer = new ol.source.Vector();
+      $scope.layer_buffer = new ol.layer.Vector({
+        source: $scope.source_buffer,
+        style: new ol.style.Style({
+          fill: new ol.style.Fill({
+            color: [0,0,0,.3]
+          })
+        })
+      });
+      preferences.map.addLayer($scope.layer_buffer);
+
+      $scope.source_vecinos = new ol.source.Vector();
+      $scope.layer_vecinos = new ol.layer.Vector({
+        source: $scope.source_vecinos,
+        style: (function() {
+          var stroke = new ol.style.Stroke({
+            color: 'black'
+          });
+          var textStroke = new ol.style.Stroke({
+            color: '#fff',
+            width: 3
+          });
+          var textFill = new ol.style.Fill({
+            color: '#000'
+          });
+          return function(feature, resolution) {
+            return [new ol.style.Style({
+              fill: new ol.style.Fill({
+                color: [0,0,255,.1]
+              }),
+              stroke: stroke,
+              text: new ol.style.Text({
+                font: '12px Calibri,sans-serif',
+                text: feature.get('NOMBRE'),
+                fill: textFill,
+                stroke: textStroke
+              })
+            })];
+          };
+        })()
+      });
+      preferences.map.addLayer($scope.layer_vecinos);
+
+      $scope.source_union = new ol.source.Vector();
+      $scope.layer_union = new ol.layer.Vector({
+        source: $scope.source_union,
+        style: (function() {
+          var stroke = new ol.style.Stroke({
+            color: 'black'
+          });
+          var textStroke = new ol.style.Stroke({
+            color: '#fff',
+            width: 3
+          });
+          var textFill = new ol.style.Fill({
+            color: '#000'
+          });
+          return function(feature, resolution) {
+            return [new ol.style.Style({
+              text: new ol.style.Text({
+                font: '12px Calibri,sans-serif',
+                text: Math.round(feature.get('compartido')/10)/100+'km',
+                fill: textFill,
+                stroke: textStroke
+              })
+            })];
+          };
+        })()
+      });
+      preferences.map.addLayer($scope.layer_union);
+
+      $scope.geom_process = 0;
+
+      $scope.init();
+  }
+
+  if(!preferences.map){
+    $scope.$on('map',$scope.ready);
+  }else{
+    $scope.ready();
+  }
+
 });

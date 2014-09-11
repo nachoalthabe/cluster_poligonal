@@ -8,7 +8,7 @@
  * Factory in the frontApp.
  */
 angular.module('frontApp')
-  .factory('preferences', function () {
+  .factory('preferences', function ($rootScope) {
     // Service logic
     // ...
 
@@ -32,6 +32,10 @@ angular.module('frontApp')
       set_selected: function(selected){
         this.selected = selected;
         localStorage.setItem("preferences.selected",selected);
+      },
+      setMap: function(map){
+        this.map = map;
+        $rootScope.$broadcast('map');
       }
     };
   });

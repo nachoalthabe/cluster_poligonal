@@ -10,8 +10,6 @@
 angular.module('frontApp')
   .controller('PreviewShapeCtrl', function ($scope,$location,preferences,features) {
 
-    $scope.current_step = "/views/procesar_vecinos.html"
-
     $scope.init = function(){
       //Si no puedo recuperar un geojson persistido, lo mando al home
       if(features.get_current() == false){
@@ -28,7 +26,7 @@ angular.module('frontApp')
         projection: 'EPSG:3857'
       });
 
-      preferences.map = $scope.map = new ol.Map({
+      $scope.map = new ol.Map({
         target: 'map',
         layers: [
           new ol.layer.Tile({
@@ -38,6 +36,9 @@ angular.module('frontApp')
         ],
         view: preferences.view
       });
+
+      preferences.setMap($scope.map);
+
 
       try {
         preferences.view.fitExtent($scope.source.getExtent());

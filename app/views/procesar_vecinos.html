@@ -1,14 +1,18 @@
-<div ng-controller="ProcesarVecinosCtrl">
+<div>
   <h4>Creando indices</h4>
   <div class="panel panel-default">
     <div class="panel-heading">
       Features
     </div>
-    <div class="panel-body" id="calcular_vecinos" ng-init="init()">
+    <div class="panel-body" id="calcular_vecinos" ng-show="!listo">
       <progressbar animate="false" max="ol_features.length" min="0" class="progress-striped active" value="proceso_indices">{{proceso_indices}}/{{ol_features.length}}</progressbar>
       <p class="text-right">
       <button ng-show="preferences.debug" ng-click="init()" type="button" class="btn btn-primary">Proximo</button>
+      <button ng-show="preferences.debug" ng-click="init_all()" type="button" class="btn btn-primary">Todos</button>
       </p>
+    </div>
+    <div class="panel-body text-center" id="calcular_vecinos" ng-show="listo">
+      <button ng-click="proximo()" type="button" class="btn btn-primary">Siguiente</button>
     </div>
   </div>
 </div>

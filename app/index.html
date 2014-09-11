@@ -29,10 +29,12 @@
         <h3 class="text-muted">Zonificacíon</h3>
       </div>
 
+      <ng-include src="'/views/shape.html'"></ng-include>
+
       <div ng-view=""></div>
 
       <div class="footer">
-        <p><span class="glyphicon glyphicon-heart"></span> de GodLab.cc</p>
+        <p><b>&lt;/&gt;</b> con <span class="glyphicon glyphicon-heart"></span> por Ignacio Althabe</p>
       </div>
     </div>
 
@@ -71,9 +73,9 @@
     <script src="bower_components/angular-route/angular-route.js"></script>
     <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
     <script src="bower_components/proj4/dist/proj4.js"></script>
+    <script src="bower_components/underscore/underscore.js"></script>
     <script src="bower_components/jsts/lib/javascript.util.js"></script>
     <script src="bower_components/jsts/lib/jsts.js"></script>
-    <script src="bower_components/underscore/underscore.js"></script>
     <!-- endbower -->
     <!-- endbuild -->
 
@@ -86,6 +88,9 @@
         <script src="scripts/services/features.js"></script>
         <script src="scripts/services/preferences.js"></script>
         <script src="scripts/controllers/procesar_vecinos.js"></script>
+        <script src="scripts/controllers/juntar.js"></script>
+        <script src="scripts/controllers/separar.js"></script>
+        <script src="scripts/controllers/buscar_semillas.js"></script>
         <!-- endbuild -->
 </body>
 </html>

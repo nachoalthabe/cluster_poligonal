@@ -16,6 +16,23 @@ angular.module('frontApp')
       self.current = JSON.parse(self.current);
     }
 
+    var ol_wkt = new ol.format.WKT(),
+        reader_jsts = new jsts.io.WKTReader(),
+        write_jsts = new jsts.io.WKTWriter();
+
+    self.feature_a_jsts = function(feature){
+      return reader_jsts.read(
+        ol_wkt.writeFeature(feature)
+      );
+    }
+
+
+    self.jsts_a_feature = function(jsts){
+      return ol_wkt.readFeature(
+        write_jsts.write(jsts)
+      );
+    }
+
     self.get_source = function(){
       //si aun no existe el source
       if(!self.source){
@@ -64,6 +81,12 @@ angular.module('frontApp')
 
       }
     };
+
+    self.update_current = function(){
+      var parser = new ol.format.GeoJSON();
+      var geojson = parser.writeFeatures(self.get_source().getFeatures());
+      self.set_current(geojson);
+    }
 
     self.get_jsts = function(){
       if(!self.jsts){
