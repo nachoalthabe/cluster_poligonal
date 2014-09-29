@@ -10,6 +10,9 @@
 angular.module('frontApp')
   .controller('IndexCtrl', function ($scope,$location,preferences,features) {
     $scope.preferences = preferences;
+
+    preferences.hideMap();
+
     $scope.init = function(){
       function handleFileSelect(evt) {
         evt.stopPropagation();

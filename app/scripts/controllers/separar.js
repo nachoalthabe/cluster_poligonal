@@ -9,6 +9,9 @@
  */
 angular.module('frontApp')
   .controller('SepararCtrl', function ($scope,$location,features,preferences) {
+    $scope.preferences = preferences;
+      preferences.showMap();
+
       $scope.source = features.get_source();
 
       $scope.event = new ol.interaction.Select();

@@ -10,6 +10,7 @@
 angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,features,preferences,$location) {
   $scope.preferences = preferences;
   $scope.porcent = 0;
+  preferences.showMap();
 
   $scope.calculate_extent = function(feature){
 
@@ -57,7 +58,7 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
   $scope.crear_indices = function(){
     if(preferences.visual_clear){
       $scope.source_buffer.clear();
-      $scope.source_vecinos.clear();
+      //$scope.source_vecinos.clear();
       $scope.source_active.clear();
       $scope.source_union.clear();
     }
@@ -92,14 +93,17 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
 
     var feature_main = feature;
 
+
     $scope.source.forEachFeatureInExtent(buffer,function(feature){
       if(feature.getId() === feature_main.getId())
         return;
+
 
       var vecinos_principal = feature_main.get('_vecinos') || {},
           vecinos_local = feature.get('_vecinos') || {};
 
       if(typeof vecinos_principal[feature.getId()] == 'undefined'){
+
         var jsts_local = $scope.feature_a_jsts(feature);
         var perimeter_local = jsts_local.getLength();
 
@@ -111,7 +115,22 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
 
         //Si son vecinos
         if(!interseccion.isEmpty()){
-          console.log('Perimetro compartido',desde_nombre,hasta_nombre,interseccion_perimeter);
+
+          if(preferences.visual){
+            $scope.source_vecinos.addFeature(feature);
+            ol.extent.extend(extent_base,feature.getGeometry().getExtent());
+
+            /*
+            interseccion = intersecciones[feature.getId()][feature_main.getId()];
+
+            var line = new jsts.geom.LineString(interseccion.geom.getCoordinates(),interseccion.geom.getPrecisionModel()),
+                frontera = $scope.jsts_a_feature(line);
+            frontera.set('compartido',interseccion.length);
+            $scope.source_union.addFeature(frontera);
+            */
+          }
+
+          //console.log('Perimetro compartido',desde_nombre,hasta_nombre,interseccion_perimeter);
           var vecinos_principal = feature_main.get('_vecinos') || {},
               vecinos_local = feature.get('_vecinos') || {};
 
@@ -134,19 +153,6 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
         };
       };
       vecinos_local = feature.get('_vecinos') || {};
-      if(preferences.visual && (typeof vecinos_local[feature_main.getId()] != 'undefined') && vecinos_local[feature_main.getId()] >= 0){
-        $scope.source_vecinos.addFeature(feature);
-        ol.extent.extend(extent_base,feature.getGeometry().getExtent());
-
-        /*
-        interseccion = intersecciones[feature.getId()][feature_main.getId()];
-
-        var line = new jsts.geom.LineString(interseccion.geom.getCoordinates(),interseccion.geom.getPrecisionModel()),
-            frontera = $scope.jsts_a_feature(line);
-        frontera.set('compartido',interseccion.length);
-        $scope.source_union.addFeature(frontera);
-        */
-      }
     })
 
     if(preferences.visual){

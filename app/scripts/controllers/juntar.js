@@ -9,6 +9,8 @@
  */
 angular.module('frontApp')
   .controller('JuntarCtrl', function ($scope,$location,features,preferences) {
+    $scope.preferences = preferences;
+    preferences.showMap();
 
       $scope.source = features.get_source();
 
@@ -75,7 +77,8 @@ angular.module('frontApp')
 
         $scope.source.removeFeature($scope.selected);
         $scope.source.removeFeature(feature);
-
+        $scope.select_first(new_feature);
+        
       }
 
       $scope.select_first = function(feature){

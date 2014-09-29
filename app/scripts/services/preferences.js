@@ -9,8 +9,6 @@
  */
 angular.module('frontApp')
   .factory('preferences', function ($rootScope) {
-    // Service logic
-    // ...
 
     var projections = ['EPSG:4326','EPSG:22185','EPSG:3857'];
 
@@ -22,20 +20,34 @@ angular.module('frontApp')
 
     var selected = localStorage.getItem("preferences.selected") || false;
 
-    // Public API here
-    return {
+    var self = {
       projections: projections,
       selected: selected,
       visual: true,
       visual_clear: true,
-      debug: true,
-      set_selected: function(selected){
-        this.selected = selected;
-        localStorage.setItem("preferences.selected",selected);
-      },
-      setMap: function(map){
-        this.map = map;
-        $rootScope.$broadcast('map');
-      }
+      debug: true
+    }
+
+    self.set_selected = function(selected){
+      self.selected = selected;
+      localStorage.setItem("preferences.selected",selected);
     };
+
+    self.setMap = function(map){
+      self.map = map;
+      $rootScope.$broadcast('map');
+    };
+
+    self.hideMap = function(){
+      self.hide_map = true;
+      //$rootScope.$apply();
+    };
+
+    self.showMap = function(){
+      self.hide_map = false;
+      //$rootScope.$apply();
+    }
+
+    // Public API here
+    return self;
   });

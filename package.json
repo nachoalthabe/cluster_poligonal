@@ -1,7 +1,10 @@
 {
   "name": "front",
   "version": "0.0.0",
-  "dependencies": {},
+  "dependencies": {
+    "connect": "^3.2.0",
+    "serve-static": "^1.6.3"
+  },
   "devDependencies": {
     "grunt": "^0.4.1",
     "grunt-autoprefixer": "^0.7.3",
