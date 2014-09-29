@@ -4,7 +4,7 @@ var connect = require('connect'),
     config = {
       path: 'dist/',
       index: 'index.html',
-      port: 8080
+      port: process.env.OPENSHIFT_NODEJS_PORT || 8080
     };
 
 app.use(serveStatic(config.path, {'index': [config.index]}))
