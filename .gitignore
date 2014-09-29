@@ -1,5 +1,8 @@
 node_modules
-dist
 .tmp
 .sass-cache
+app
+docs
+shape_test
+test
 bower_components
