@@ -1,5 +1,8 @@
 node_modules
-dist
+app
+docs
+shape_test
+test
 .tmp
 .sass-cache
 .DS_Store
