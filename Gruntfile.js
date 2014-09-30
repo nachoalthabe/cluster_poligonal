@@ -81,6 +81,10 @@ module.exports = function (grunt) {
                 '/bower_components',
                 connect.static('./bower_components')
               ),
+              connect().use(
+                '/external',
+                connect.static('./external')
+              ),
               connect.static(appConfig.app)
             ];
           }
@@ -312,7 +316,8 @@ module.exports = function (grunt) {
             '*.html',
             'views/{,*/}*.html',
             'images/{,*/}*.{webp}',
-            'fonts/*'
+            'fonts/*',
+            'ol_jsts.js',
           ]
         }, {
           expand: true,
