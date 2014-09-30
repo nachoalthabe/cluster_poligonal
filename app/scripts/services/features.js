@@ -82,6 +82,15 @@ angular.module('frontApp')
       }
     };
 
+    self.reset_current = function(){
+      self.current = self.source = self.layer = false;
+      try {
+        localStorage.removeItem("current_json");
+      } catch (variable) {
+
+      }
+    };
+
     self.update_current = function(){
       var parser = new ol.format.GeoJSON();
       var geojson = parser.writeFeatures(self.get_source().getFeatures());

@@ -11,6 +11,7 @@ angular.module('frontApp')
   .controller('IndexCtrl', function ($scope,$location,preferences,features) {
     $scope.preferences = preferences;
 
+    features.reset_current();
     preferences.hideMap();
 
     $scope.init = function(){
