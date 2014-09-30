@@ -1,9 +1,10 @@
 {
   "name": "front",
   "version": "0.0.0",
-   "scripts": {
+  "scripts": {
     "start": "node serve.js"
   },
+  "main": "serve.js",
   "dependencies": {
     "connect": "^3.2.0",
     "serve-static": "^1.6.3"
