@@ -4,7 +4,7 @@ var connect = require('connect'),
     config = {
       path: 'dist/',
       index: 'index.html',
-      port: process.env.OPENSHIFT_NODEJS_PORT || 8080,
+      port: process.env.OPENSHIFT_NODEJS_PORT || 8000,
       ip: process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1"
     };
 
