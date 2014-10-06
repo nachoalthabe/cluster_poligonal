@@ -41,9 +41,7 @@ angular.module('frontApp')
             $location.path('/calcular_vecinos');
           })
         }else{
-          features.parse_shp(shape,dbf).then(function(){
-            $location.path('/calcular_vecinos');
-          })
+          alert('error, no es geojson');
         }
       }
 

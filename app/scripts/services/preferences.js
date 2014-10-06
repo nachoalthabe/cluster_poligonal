@@ -25,17 +25,13 @@ angular.module('frontApp')
       selected: selected,
       visual: true,
       visual_clear: true,
-      debug: true
+      debug: true,
+      map: false
     }
 
     self.set_selected = function(selected){
       self.selected = selected;
       localStorage.setItem("preferences.selected",selected);
-    };
-
-    self.setMap = function(map){
-      self.map = map;
-      $rootScope.$broadcast('map');
     };
 
     self.hideMap = function(){
@@ -44,9 +40,58 @@ angular.module('frontApp')
     };
 
     self.showMap = function(){
+      if(!self.map){
+        self.view = new ol.View({
+          center: ol.proj.transform([0,0], 'EPSG:4326', 'EPSG:3857'),
+          zoom: 4,
+          projection: 'EPSG:3857'
+        });
+
+        var layer_base = new ol.source.OSM();
+        layer_base.addEventListener('change',function(){
+          console.log('on.change',arguments)
+        });
+
+        layer_base.addEventListener('load',function(){
+          console.log('once.change',arguments)
+        });
+
+        self.map = new ol.Map({
+          target: 'map',
+          layers: [
+            new ol.layer.Tile({
+              source: layer_base
+            })
+          ],
+          view: self.view
+        });
+      }
+
+      $rootScope.$broadcast('map');
       self.hide_map = false;
       //$rootScope.$apply();
+    };
+
+    self.persistir = function(){
+      localStorage.setItem("cantidad_de_semillas",self.cantidad_de_semillas);
+      localStorage.setItem("propiedad_para_calcular",self.propiedad_para_calcular);
+      localStorage.setItem("propiedad_suma_total",self.propiedad_suma_total);
     }
+
+    self.reset = function(){
+      localStorage.removeItem("cantidad_de_semillas");
+      localStorage.removeItem("propiedad_para_calcular");
+      localStorage.removeItem("propiedad_suma_total");
+      self.init();
+    }
+
+    self.init = function(){
+      self.cantidad_de_semillas = localStorage.getItem("cantidad_de_semillas") || 7;
+      self.propiedad_para_calcular = localStorage.getItem("propiedad_para_calcular") || "POB_2011";
+      self.propiedad_suma_total = localStorage.getItem("propiedad_suma_total") || 0;
+    }
+
+    self.init();
 
     // Public API here
     return self;

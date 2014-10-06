@@ -42,6 +42,7 @@ angular.module('frontApp')
             other = features.feature_a_jsts(feature);
 
         var new_feature = features.jsts_a_feature(selected.union(other));
+        new_feature.set(preferences.propiedad_para_calcular,$scope.selected.get(preferences.propiedad_para_calcular)+feature.get(preferences.propiedad_para_calcular));
         new_feature.set('NOMBRE',$scope.selected.get('NOMBRE') + ' + ' + feature.get('NOMBRE'));
         new_feature.setId($scope.selected.getId() +'+'+ feature.getId());
         $scope.source.addFeature(new_feature);
@@ -78,7 +79,7 @@ angular.module('frontApp')
         $scope.source.removeFeature($scope.selected);
         $scope.source.removeFeature(feature);
         $scope.select_first(new_feature);
-        
+
       }
 
       $scope.select_first = function(feature){

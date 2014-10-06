@@ -63,6 +63,7 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
       $scope.source_union.clear();
     }
     var feature = $scope.ol_features[$scope.proceso_indices];
+    preferences.propiedad_suma_total += feature.get(preferences.propiedad_para_calcular);
     var desde_nombre = feature.getProperties().NOMBRE;
     var id = _.uniqueId('feature_');
 

@@ -1,10 +1,21 @@
 <div class="col-12-xs">
   <div class="panel panel-default">
     <div class="panel-heading">
-      Buscar Semillas :: (ToDo...)
+      Buscar Semillas
     </div>
     <div class="panel-body" id="calcular_vecinos">
-      Cuantas semillas necesita?
+      <p>
+        Cantidad de semillas: {{semillas_cantidad}}
+      </p>
+      <p>
+        Total: {{total}}
+      </p>
+      <p>
+        Objetivo: {{objetivo}}
+      </p>
+      <p>
+        Distancia Objetivo: {{radio_preferencial}}
+      </p>
     </div>
     <div class="panel-body text-center" id="calcular_vecinos" >
       <button ng-click="proximo()" type="button" class="btn btn-primary">Siguiente</button>
