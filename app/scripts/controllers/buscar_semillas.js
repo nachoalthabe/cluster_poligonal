@@ -12,6 +12,7 @@ angular.module('frontApp')
     $scope.total = preferences.propiedad_suma_total;
     $scope.semillas_cantidad = preferences.cantidad_de_semillas;
     $scope.objetivo = preferences.propiedad_suma_total / preferences.cantidad_de_semillas;
+    $scope.pasadas = preferences.pasadas;
 
     preferences.showMap();
 
@@ -24,6 +25,17 @@ angular.module('frontApp')
     }
 
     $scope.addLayer= function(){
+      $scope.source_buffer = new ol.source.Vector();
+      $scope.layer_buffer = new ol.layer.Vector({
+        source: $scope.source_buffer,
+        style: new ol.style.Style({
+          fill: new ol.style.Fill({
+            color: [0,0,0,.3]
+          })
+        })
+      });
+      preferences.map.addLayer($scope.layer_buffer);
+
       $scope.source = new ol.source.Vector();
       $scope.layer = new ol.layer.Vector({
         source: $scope.source,
@@ -47,9 +59,6 @@ angular.module('frontApp')
             return [new ol.style.Style({
               fill: new ol.style.Fill({
                 color: [255,0,0,.8]
-              }),
-              stroke: new ol.style.Stroke({
-                color: 'black'
               })
             })];
           };
@@ -57,16 +66,11 @@ angular.module('frontApp')
       });
       preferences.map.addLayer($scope.layer_semillas);
 
-      $scope.source_buffer = new ol.source.Vector();
-      $scope.layer_buffer = new ol.layer.Vector({
-        source: $scope.source_buffer,
-        style: new ol.style.Style({
-          fill: new ol.style.Fill({
-            color: [0,0,0,.3]
-          })
-        })
-      });
-      preferences.map.addLayer($scope.layer_buffer);
+      $scope.source_semillas_radios = new ol.source.Vector();
+      $scope.layer_semillas_radios = new ol.layer.Vector({
+        source: $scope.source_semillas_radios
+      })
+      preferences.map.addLayer($scope.layer_semillas_radios);
 
       $scope.initProcess();
     };
@@ -111,12 +115,36 @@ angular.module('frontApp')
         $scope.source.addFeature(feature);
       });
 
-      $scope.seleccionarSemillas();
+
+      var current_pasada = 9;
+      while(current_pasada < $scope.pasadas){
+        var alpha = 1;
+        setTimeout(function(){
+          $scope.seleccionarSemillas(alpha);
+        },0);
+        current_pasada ++;
+      }
     }
 
     $scope.semillas = [];
 
-    $scope.seleccionarSemillas = function(){
+    $scope.limites_alpha = [];
+
+    $scope.calcular_limites_alpha = function(_min,_max){
+      var min = Math.round(_min*10)/10,
+          max = Math.round(_max*10)/10;
+      if( ! ((min < 2 && min < max) && (max > 0 && max > min))){
+        alert('Limites invalidos');
+      }
+      $scope.limites_alpha = [];
+      while(min < max){
+        $scope.limites_alpha.push(min);
+        min += .1;
+      }
+    }
+
+    $scope.seleccionarSemillas = function(alpha){
+      var radio_alpha = $scope.radio_preferencial * alpha;
       $scope.featuresOrdenadas = $scope.ol_features.sort(function(a, b) {
         return a.get('rating') - b.get('rating');
       });
@@ -146,21 +174,24 @@ angular.module('frontApp')
 
         var distancia_minima = new ol.geom.LineString([mas_cercana.get('centro'),feature.get('centro')]).getLength();
 
-        if(distancia_minima > $scope.radio_preferencial && $scope.semillas.length < $scope.semillas_cantidad){
-          console.log('Semilla',distancia_minima,$scope.radio_preferencial);
+        if(distancia_minima > radio_alpha && $scope.semillas.length < $scope.semillas_cantidad){
+          console.log('Semilla',distancia_minima,radio_alpha);
           $scope.semillas.push(feature);
         }
       });
 
       $scope.semillas.forEach(function(semilla){
-        //$scope.source_semillas.addFeature(semilla);
-        var geom = ol.geom.Polygon.circular(new ol.Sphere($scope.radio_preferencial), semilla.get('centro'), $scope.radio_preferencial);
-        console.log(geom);
-        var radio = new ol.Feature({
-          geometry: geom
-        });
-        $scope.source_semillas.addFeature(radio);
-      })
+        $scope.source_semillas.addFeature(semilla);
+        var centro_4326 = new ol.geom.Point(semilla.get('centro')).transform('EPSG:3857','EPSG:4326').getCoordinates(),
+            sphere = new ol.Sphere(6378137),
+            geom = ol.geom.Polygon.circular(sphere, centro_4326, radio_alpha/2).transform('EPSG:4326', 'EPSG:3857'),
+            radio = new ol.Feature({
+              geometry: geom
+            });
+        console.log(sphere,geom);
+
+        $scope.source_semillas_radios.addFeature(radio);
+      });
 
       console.log('mejores',$scope.semillas);
     }

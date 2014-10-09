@@ -76,12 +76,14 @@ angular.module('frontApp')
       localStorage.setItem("cantidad_de_semillas",self.cantidad_de_semillas);
       localStorage.setItem("propiedad_para_calcular",self.propiedad_para_calcular);
       localStorage.setItem("propiedad_suma_total",self.propiedad_suma_total);
+      localStorage.setItem("pasadas",self.pasadas);
     }
 
     self.reset = function(){
       localStorage.removeItem("cantidad_de_semillas");
       localStorage.removeItem("propiedad_para_calcular");
       localStorage.removeItem("propiedad_suma_total");
+      localStorage.removeItem("pasadas");
       self.init();
     }
 
@@ -89,6 +91,7 @@ angular.module('frontApp')
       self.cantidad_de_semillas = localStorage.getItem("cantidad_de_semillas") || 8;
       self.propiedad_para_calcular = localStorage.getItem("propiedad_para_calcular") || "POB_2011";
       self.propiedad_suma_total = localStorage.getItem("propiedad_suma_total") || 0;
+      self.pasadas = localStorage.getItem("pasadas") || 10;
     }
 
     self.init();
