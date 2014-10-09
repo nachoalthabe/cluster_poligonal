@@ -86,7 +86,7 @@ angular.module('frontApp')
     }
 
     self.init = function(){
-      self.cantidad_de_semillas = localStorage.getItem("cantidad_de_semillas") || 7;
+      self.cantidad_de_semillas = localStorage.getItem("cantidad_de_semillas") || 8;
       self.propiedad_para_calcular = localStorage.getItem("propiedad_para_calcular") || "POB_2011";
       self.propiedad_suma_total = localStorage.getItem("propiedad_suma_total") || 0;
     }

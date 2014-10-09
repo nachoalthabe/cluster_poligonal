@@ -39,6 +39,24 @@ angular.module('frontApp')
       });
       preferences.map.addLayer($scope.layer);
 
+      $scope.source_semillas = new ol.source.Vector();
+      $scope.layer_semillas = new ol.layer.Vector({
+        source: $scope.source_semillas,
+        style: (function() {
+          return function(feature, resolution) {
+            return [new ol.style.Style({
+              fill: new ol.style.Fill({
+                color: [255,0,0,.8]
+              }),
+              stroke: new ol.style.Stroke({
+                color: 'black'
+              })
+            })];
+          };
+        })()
+      });
+      preferences.map.addLayer($scope.layer_semillas);
+
       $scope.source_buffer = new ol.source.Vector();
       $scope.layer_buffer = new ol.layer.Vector({
         source: $scope.source_buffer,
@@ -74,10 +92,6 @@ angular.module('frontApp')
         feature.set('rating',$scope.objetivo - poblacion);
       });
 
-      $scope.ol_features.sort(function(a, b) {
-        return a.get('rating') - b.get('rating');
-      });
-
       var geom = new ol.geom.Polygon([[
         [extent[0],extent[1]],
         [extent[0],extent[3]],
@@ -95,8 +109,63 @@ angular.module('frontApp')
 
       $scope.ol_features.forEach(function(feature){
         $scope.source.addFeature(feature);
-      })
+      });
+
+      $scope.seleccionarSemillas();
     }
+
+    $scope.semillas = [];
+
+    $scope.seleccionarSemillas = function(){
+      $scope.featuresOrdenadas = $scope.ol_features.sort(function(a, b) {
+        return a.get('rating') - b.get('rating');
+      });
+
+      $scope.semillas.push($scope.featuresOrdenadas.pop());
+
+
+      $scope.featuresOrdenadas.forEach(function(feature){
+        //Hago un extent con los dos centro
+        var centro_feature = feature.get('centro') || false;
+        if(!centro_feature){
+          centro_feature = feature.getGeometry().getInteriorPoint().getCoordinates();
+          feature.set('centro',centro_feature);
+        }
+
+        var mas_cercana = _.min($scope.semillas, function(semilla){
+          var centro_semilla = semilla.get('centro') || false;
+
+          if(!centro_semilla){
+            centro_semilla = semilla.getGeometry().getInteriorPoint().getCoordinates();
+            semilla.set('centro',centro_semilla);
+          }
+
+          var linea_centros = new ol.geom.LineString([centro_feature,centro_semilla]);
+          return linea_centros.getLength();
+        });
+
+        var distancia_minima = new ol.geom.LineString([mas_cercana.get('centro'),feature.get('centro')]).getLength();
+
+        if(distancia_minima > $scope.radio_preferencial && $scope.semillas.length < $scope.semillas_cantidad){
+          console.log('Semilla',distancia_minima,$scope.radio_preferencial);
+          $scope.semillas.push(feature);
+        }
+      });
+
+      $scope.semillas.forEach(function(semilla){
+        //$scope.source_semillas.addFeature(semilla);
+        var geom = ol.geom.Polygon.circular(new ol.Sphere($scope.radio_preferencial), semilla.get('centro'), $scope.radio_preferencial);
+        console.log(geom);
+        var radio = new ol.Feature({
+          geometry: geom
+        });
+        $scope.source_semillas.addFeature(radio);
+      })
+
+      console.log('mejores',$scope.semillas);
+    }
+
+
     if(!preferences.map){
       $scope.$on('map',function(){
         $scope.addLayer();
