@@ -146,13 +146,13 @@ angular.module('frontApp')
     $scope.seleccionarSemillas = function(alpha){
       var radio_alpha = $scope.radio_preferencial * alpha;
       $scope.featuresOrdenadas = $scope.ol_features.sort(function(a, b) {
-        return a.get('rating') - b.get('rating');
+        return b.get('rating') - a.get('rating');
       });
 
       $scope.semillas.push($scope.featuresOrdenadas.pop());
 
 
-      $scope.featuresOrdenadas.forEach(function(feature){
+      _.reject($scope.featuresOrdenadas,function(feature){
         //Hago un extent con los dos centro
         var centro_feature = feature.get('centro') || false;
         if(!centro_feature){
@@ -175,9 +175,16 @@ angular.module('frontApp')
         var distancia_minima = new ol.geom.LineString([mas_cercana.get('centro'),feature.get('centro')]).getLength();
 
         if(distancia_minima > radio_alpha && $scope.semillas.length < $scope.semillas_cantidad){
-          console.log('Semilla',distancia_minima,radio_alpha);
+          var vecinos = feature.get('_vecinos');
+          vecinos.forEach(function(vecino){
+            var vecinos_local = vecino.get('_vecinos');
+            delete vecinos_local[feature.get('ID')];
+            vecino.set('_vecinos',vecinos_local);
+          })
           $scope.semillas.push(feature);
+          return true;
         }
+        return false;
       });
 
       $scope.semillas.forEach(function(semilla){
@@ -193,7 +200,42 @@ angular.module('frontApp')
         $scope.source_semillas_radios.addFeature(radio);
       });
 
-      console.log('mejores',$scope.semillas);
+      while($scope.featuresOrdenadas.length > 0){
+        $scope.crecer();
+      }
+    }
+
+    $scope.crecer = function(){
+
+    };
+
+    $scope.elegir_semilla= function(){
+      var maximo = _.max($scope.semillas,function(semilla) {
+                    return semilla.get('rating');
+                  }),
+          maximas = _.reject($scope.semillas,function(semilla){
+                    return semilla.get('rating') < maximo.get('rating');
+                  }),
+          menor = maximas.pop(),
+          vecinos_menor = _.size(menor.get('_vecinos'));
+
+      maximas.forEach(function(maxima){
+        var vecinos_local = _.size(maxima.get('_vecinos'))
+        if(vecinos_local < vecinos_menor){
+          menor = maxima;
+          vecinos_menor = vecinos_local;
+        }
+      });
+
+      return menor;
+    }
+
+    $scope.elegir_poligono= function(cluster){
+      var vecinos = cluster.get('_vecinos'),
+          mp = _.min(vecinos, function(vecino){
+                return vecino.get('rating');
+               });
+      return mp;
     }
 
 
