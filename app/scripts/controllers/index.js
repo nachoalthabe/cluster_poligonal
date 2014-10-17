@@ -11,7 +11,6 @@ angular.module('frontApp')
   .controller('IndexCtrl', function ($scope,$location,preferences,features) {
     $scope.preferences = preferences;
 
-    features.reset_current();
     preferences.hideMap();
 
     $scope.init = function(){
@@ -37,6 +36,7 @@ angular.module('frontApp')
           }
         });
         if(geojson){
+          features.reset_current();
           features.parse_geojson(geojson).then(function(){
             $location.path('/calcular_vecinos');
           })

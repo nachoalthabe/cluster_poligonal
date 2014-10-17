@@ -72,26 +72,51 @@ angular.module('frontApp')
       //$rootScope.$apply();
     };
 
+    var para_persistir = [{
+        name: 'cantidad_de_semillas',
+        default: 8
+      },{
+        name: 'propiedad_para_calcular',
+        default: 'POB_2011'
+      },{
+        name: 'propiedad_suma_total',
+        default: 0
+      },{
+        name: 'propiedad_objetivo',
+        default: 0
+      },{
+        name: 'clusters',
+        default: []
+      }
+    ]
+
     self.persistir = function(){
-      localStorage.setItem("cantidad_de_semillas",self.cantidad_de_semillas);
-      localStorage.setItem("propiedad_para_calcular",self.propiedad_para_calcular);
-      localStorage.setItem("propiedad_suma_total",self.propiedad_suma_total);
-      localStorage.setItem("pasadas",self.pasadas);
+      para_persistir.forEach(function(propiedad){
+        localStorage.setItem(propiedad.name,self[propiedad.name]);
+      })
     }
 
     self.reset = function(){
-      localStorage.removeItem("cantidad_de_semillas");
-      localStorage.removeItem("propiedad_para_calcular");
-      localStorage.removeItem("propiedad_suma_total");
-      localStorage.removeItem("pasadas");
+      para_persistir.forEach(function(propiedad){
+        localStorage.removeItem(propiedad.name);
+      });
       self.init();
     }
 
     self.init = function(){
-      self.cantidad_de_semillas = localStorage.getItem("cantidad_de_semillas") || 8;
-      self.propiedad_para_calcular = localStorage.getItem("propiedad_para_calcular") || "POB_2011";
-      self.propiedad_suma_total = localStorage.getItem("propiedad_suma_total") || 0;
-      self.pasadas = localStorage.getItem("pasadas") || 10;
+      para_persistir.forEach(function(propiedad){
+        self[propiedad.name] = localStorage.getItem(propiedad) || propiedad.default;
+      });
+    }
+
+    self.set_clusters = function(clusters){
+      self.clusters = clusters;
+      localStorage.setItem("clusters",clusters);
+    }
+
+    self.set_objetivo = function(objetivo){
+      self.propiedad_objetivo = objetivo;
+      localStorage.setItem("propiedad_objetivo",objetivo);
     }
 
     self.init();

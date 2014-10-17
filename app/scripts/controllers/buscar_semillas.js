@@ -12,6 +12,7 @@ angular.module('frontApp')
     $scope.total = preferences.propiedad_suma_total;
     $scope.semillas_cantidad = preferences.cantidad_de_semillas;
     $scope.objetivo = preferences.propiedad_suma_total / preferences.cantidad_de_semillas;
+    preferences.set_objetivo($scope.objetivo);
     $scope.pasadas = preferences.pasadas;
 
     preferences.showMap();
@@ -66,6 +67,24 @@ angular.module('frontApp')
       });
       preferences.map.addLayer($scope.layer_semillas);
 
+      $scope.source_libres = new ol.source.Vector();
+      $scope.ol_features.forEach(function(feature){
+        $scope.source_libres.addFeature(_.clone(feature));
+      })
+      $scope.layer_libres = new ol.layer.Vector({
+        source: $scope.source_libres,
+        style: (function() {
+          return function(feature, resolution) {
+            return [new ol.style.Style({
+              stroke: new ol.style.Stroke({
+                color: [0,255,0,.8]
+              })
+            })];
+          };
+        })()
+      });
+      preferences.map.addLayer($scope.layer_libres);
+
       $scope.source_semillas_radios = new ol.source.Vector();
       $scope.layer_semillas_radios = new ol.layer.Vector({
         source: $scope.source_semillas_radios
@@ -116,19 +135,14 @@ angular.module('frontApp')
       });
 
 
-      var current_pasada = 9;
-      while(current_pasada < $scope.pasadas){
-        var alpha = 1;
-        setTimeout(function(){
-          $scope.seleccionarSemillas(alpha);
-        },0);
-        current_pasada ++;
-      }
+      $scope.seleccionarSemillas(1);
     }
 
     $scope.semillas = [];
 
     $scope.limites_alpha = [];
+
+    $scope.features_libres = [];
 
     $scope.calcular_limites_alpha = function(_min,_max){
       var min = Math.round(_min*10)/10,
@@ -175,10 +189,13 @@ angular.module('frontApp')
         var distancia_minima = new ol.geom.LineString([mas_cercana.get('centro'),feature.get('centro')]).getLength();
 
         if(distancia_minima > radio_alpha && $scope.semillas.length < $scope.semillas_cantidad){
-          console.log('Semilla',distancia_minima,radio_alpha);
           $scope.semillas.push(feature);
+          $scope.source_libres.removeFeature(feature);
+          $scope.desconectar_vecinos(feature);
         }
       });
+
+      preferences.set_clusters($scope.semillas);
 
       $scope.semillas.forEach(function(semilla){
         $scope.source_semillas.addFeature(semilla);
@@ -188,14 +205,23 @@ angular.module('frontApp')
             radio = new ol.Feature({
               geometry: geom
             });
-        console.log(sphere,geom);
 
         $scope.source_semillas_radios.addFeature(radio);
       });
 
-      console.log('mejores',$scope.semillas);
     }
 
+    $scope.desconectar_vecinos = function(feature){
+      var vecinos = feature.get('_vecinos'),
+          id = parseInt(feature.getId());
+
+      _.each(vecinos,function(frontera_comun,vecino_id){
+        var vecino = $scope.source_libres.getFeatureById(vecino_id),
+            vecinos_de_vecino = vecino.get('_vecinos');
+        delete vecinos_de_vecino[id];
+        feature.set('_vecinos',vecinos_de_vecino);
+      })
+    }
 
     if(!preferences.map){
       $scope.$on('map',function(){

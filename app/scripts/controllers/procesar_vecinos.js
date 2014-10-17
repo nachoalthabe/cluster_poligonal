@@ -201,6 +201,7 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
   $scope.listo = false;
 
   $scope.init = function(){
+    preferences.propiedad_suma_total = 0;
     $scope.crear_indices();
   }
 
