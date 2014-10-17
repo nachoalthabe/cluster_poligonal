@@ -269,6 +269,8 @@ angular.module('frontApp')
 
     $scope.mejor_cluster = false;
     $scope.mc = function(){
+      $scope.source_buffer.clear();
+      $scope.source_clusters_radios.clear();
       if($scope.clusters_activos.length == 0){
         return;
       }
