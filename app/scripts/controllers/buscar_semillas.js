@@ -8,12 +8,12 @@
  * Controller of the frontApp
  */
 angular.module('frontApp')
-  .controller('BuscarSemillasCtrl', function ($scope,preferences,features) {
+  .controller('BuscarSemillasCtrl', function ($scope,preferences,features, calculos) {
     $scope.total = preferences.propiedad_suma_total;
-    $scope.semillas_cantidad = preferences.cantidad_de_semillas;
+    $scope.clusters_cantidad = preferences.cantidad_de_semillas;
     $scope.objetivo = preferences.propiedad_suma_total / preferences.cantidad_de_semillas;
     preferences.set_objetivo($scope.objetivo);
-    $scope.pasadas = preferences.pasadas;
+    $scope.features = features;
 
     preferences.showMap();
 
@@ -52,44 +52,74 @@ angular.module('frontApp')
       });
       preferences.map.addLayer($scope.layer);
 
-      $scope.source_semillas = new ol.source.Vector();
-      $scope.layer_semillas = new ol.layer.Vector({
-        source: $scope.source_semillas,
+      $scope.source_clusters = new ol.source.Vector();
+      $scope.layer_clusters = new ol.layer.Vector({
+        source: $scope.source_clusters,
         style: (function() {
           return function(feature, resolution) {
             return [new ol.style.Style({
               fill: new ol.style.Fill({
+                color: [255,0,0,.8]
+              }),
+              stroke: new ol.style.Stroke({
+                color: [0,0,0,.8]
+              })
+            })];
+          };
+        })()
+      });
+      preferences.map.addLayer($scope.layer_clusters);
+
+      $scope.source_clusters_radios = new ol.source.Vector();
+      $scope.layer_clusters_radios = new ol.layer.Vector({
+        source: $scope.source_clusters_radios
+      })
+      preferences.map.addLayer($scope.layer_clusters_radios);
+
+      $scope.source_mc = new ol.source.Vector();
+      $scope.layer_mc = new ol.layer.Vector({
+        source: $scope.source_mc,
+        style: (function() {
+          return function(feature, resolution) {
+            return [new ol.style.Style({
+              stroke: new ol.style.Stroke({
+                color: [0,0,255,.8]
+              })
+            })];
+          };
+        })()
+      });
+      preferences.map.addLayer($scope.layer_mc);
+
+      $scope.source_pp = new ol.source.Vector();
+      $scope.layer_pp = new ol.layer.Vector({
+        source: $scope.source_pp,
+        style: (function() {
+          return function(feature, resolution) {
+            return [new ol.style.Style({
+              fill: new ol.style.Fill({
+                color: [0,0,255,.8]
+              })
+            })];
+          };
+        })()
+      });
+      preferences.map.addLayer($scope.layer_pp);
+
+      $scope.source_mp = new ol.source.Vector();
+      $scope.layer_mp = new ol.layer.Vector({
+        source: $scope.source_mp,
+        style: (function() {
+          return function(feature, resolution) {
+            return [new ol.style.Style({
+              stroke: new ol.style.Stroke({
                 color: [255,0,0,.8]
               })
             })];
           };
         })()
       });
-      preferences.map.addLayer($scope.layer_semillas);
-
-      $scope.source_libres = new ol.source.Vector();
-      $scope.ol_features.forEach(function(feature){
-        $scope.source_libres.addFeature(_.clone(feature));
-      })
-      $scope.layer_libres = new ol.layer.Vector({
-        source: $scope.source_libres,
-        style: (function() {
-          return function(feature, resolution) {
-            return [new ol.style.Style({
-              stroke: new ol.style.Stroke({
-                color: [0,255,0,.8]
-              })
-            })];
-          };
-        })()
-      });
-      preferences.map.addLayer($scope.layer_libres);
-
-      $scope.source_semillas_radios = new ol.source.Vector();
-      $scope.layer_semillas_radios = new ol.layer.Vector({
-        source: $scope.source_semillas_radios
-      })
-      preferences.map.addLayer($scope.layer_semillas_radios);
+      preferences.map.addLayer($scope.layer_mp);
 
       $scope.initProcess();
     };
@@ -128,7 +158,7 @@ angular.module('frontApp')
 
       $scope.source_buffer.addFeature(extent_geometry);
 
-      $scope.radio_preferencial = Math.sqrt(geom.getArea()/(Math.PI*$scope.semillas_cantidad));
+      $scope.radio_preferencial = Math.sqrt(geom.getArea()/(Math.PI*$scope.clusters_cantidad));
 
       $scope.ol_features.forEach(function(feature){
         $scope.source.addFeature(feature);
@@ -138,11 +168,12 @@ angular.module('frontApp')
       $scope.seleccionarSemillas(1);
     }
 
-    $scope.semillas = [];
+    $scope.clusters_activos = [];
+    $scope.clusters = [];
 
     $scope.limites_alpha = [];
 
-    $scope.features_libres = [];
+    $scope.features_libres = {};
 
     $scope.calcular_limites_alpha = function(_min,_max){
       var min = Math.round(_min*10)/10,
@@ -163,10 +194,16 @@ angular.module('frontApp')
         return b.get('rating') - a.get('rating');
       });
 
-      $scope.semillas.push($scope.featuresOrdenadas.pop());
+      $scope.clusters.push($scope.featuresOrdenadas[0]);
+      $scope.desconectar_vecinos($scope.featuresOrdenadas[0]);
 
-
-      _.reject($scope.featuresOrdenadas,function(feature){
+      _.each($scope.featuresOrdenadas,function(feature){
+        //Si ya es cluster
+        if(_.some($scope.clusters,function(cluster){
+          return cluster.getId() == feature.getId();
+        })){
+          return;
+        }
         //Hago un extent con los dos centro
         var centro_feature = feature.get('centro') || false;
         if(!centro_feature){
@@ -174,7 +211,7 @@ angular.module('frontApp')
           feature.set('centro',centro_feature);
         }
 
-        var mas_cercana = _.min($scope.semillas, function(semilla){
+        var mas_cercana = _.min($scope.clusters, function(semilla){
           var centro_semilla = semilla.get('centro') || false;
 
           if(!centro_semilla){
@@ -188,18 +225,21 @@ angular.module('frontApp')
 
         var distancia_minima = new ol.geom.LineString([mas_cercana.get('centro'),feature.get('centro')]).getLength();
 
-        if(distancia_minima > radio_alpha && $scope.semillas.length < $scope.semillas_cantidad){
-          $scope.semillas.push(feature);
-          $scope.source_libres.removeFeature(feature);
+        if(distancia_minima > radio_alpha && $scope.clusters.length < $scope.clusters_cantidad){
+          $scope.clusters.push(feature);
           $scope.desconectar_vecinos(feature);
+        }else{
+          $scope.features_libres[feature.getId()] = feature;
         }
         return false;
       });
 
-      preferences.set_clusters($scope.semillas);
+      $scope.clusters_activos = _.clone($scope.clusters);
 
-      $scope.semillas.forEach(function(semilla){
-        $scope.source_semillas.addFeature(semilla);
+      preferences.set_clusters($scope.clusters);
+
+      $scope.clusters.forEach(function(semilla){
+        $scope.source_clusters.addFeature(_.clone(semilla));
         var centro_4326 = new ol.geom.Point(semilla.get('centro')).transform('EPSG:3857','EPSG:4326').getCoordinates(),
             sphere = new ol.Sphere(6378137),
             geom = ol.geom.Polygon.circular(sphere, centro_4326, radio_alpha/2).transform('EPSG:4326', 'EPSG:3857'),
@@ -207,8 +247,10 @@ angular.module('frontApp')
               geometry: geom
             });
 
-        $scope.source_semillas_radios.addFeature(radio);
+        $scope.source_clusters_radios.addFeature(radio);
       });
+
+
     }
 
     $scope.desconectar_vecinos = function(feature){
@@ -216,11 +258,96 @@ angular.module('frontApp')
           id = parseInt(feature.getId());
 
       _.each(vecinos,function(frontera_comun,vecino_id){
-        var vecino = $scope.source_libres.getFeatureById(vecino_id),
+        var vecino = $scope.source.getFeatureById(vecino_id),
             vecinos_de_vecino = vecino.get('_vecinos');
         delete vecinos_de_vecino[id];
-        feature.set('_vecinos',vecinos_de_vecino);
+        vecino.set('_vecinos',vecinos_de_vecino);
       })
+    }
+
+    $scope.hacer_todo = false;
+
+    $scope.mejor_cluster = false;
+    $scope.mc = function(){
+      if($scope.clusters_activos.length == 0){
+        return;
+      }
+      $scope.hay_punto_muerto = false;
+      $scope.source_mc.clear();
+      $scope.mejor_cluster = calculos.mejor_cluster($scope.clusters_activos,$scope.features_libres);
+      $scope.source_mc.addFeature($scope.mejor_cluster);
+
+      var pan = ol.animation.pan({
+        duration: 50,
+        source: /** @type {ol.Coordinate} */ (preferences.map.getView().getCenter())
+      });
+      var zoom = ol.animation.zoom({
+        resolution: preferences.map.getView().getResolution(),
+        duration: 50,
+      });
+
+      preferences.map.beforeRender(pan);
+      preferences.map.beforeRender(zoom);
+
+      preferences.view.fitExtent($scope.mejor_cluster.getGeometry().getExtent(),preferences.map.getSize());
+      if($scope.hacer_todo){
+        setTimeout($scope.pp,100);
+      }
+    }
+
+    $scope.poligonos_posibles = false;
+    $scope.pp = function(){
+      $scope.source_pp.clear();
+      $scope.poligonos_posibles = calculos.poligonos_posibles($scope.mejor_cluster,$scope.features_libres);
+      //No puede crecer mas
+      if($scope.poligonos_posibles.length == 0){
+        $scope.clusters_activos = $scope.clusters_activos.filter(function(cluster){
+          return cluster.getId() != $scope.mejor_cluster.getId();
+        });
+        $scope.mejor_cluster = false;
+        $scope.poligonos_posibles = false;
+        $scope.hay_punto_muerto = true;
+        if($scope.hacer_todo){
+          $scope.mc();
+          return;
+        }
+      }
+      _.each($scope.poligonos_posibles,function(poligono_posible){
+        $scope.source_pp.addFeature(poligono_posible);
+      })
+      if($scope.hacer_todo){
+        $scope.mp();
+      }
+    }
+
+    $scope.mejor_poligono = false;
+    $scope.mp = function(){
+      $scope.source_mp.clear();
+      $scope.mejor_poligono = calculos.mejor_poligono($scope.mejor_cluster,$scope.poligonos_posibles);
+      $scope.source_mp.addFeature($scope.mejor_poligono);
+      if($scope.hacer_todo){
+        $scope.juntar();
+      }
+    }
+
+    $scope.juntar = function(){
+      calculos.juntar($scope.mejor_cluster,$scope.mejor_poligono,$scope.features_libres);
+      $scope.mejor_cluster = false;
+      $scope.source_mc.clear();
+      $scope.poligonos_posibles = false;
+      $scope.source_pp.clear();
+      $scope.mejor_poligono = false;
+      $scope.source_mp.clear();
+      if($scope.hacer_todo){
+        setTimeout(function(){
+          $scope.mc();
+        },100);
+      }
+    }
+
+    $scope.completo = function(){
+      $scope.hacer_todo = true;
+      $scope.mc();
     }
 
     if(!preferences.map){

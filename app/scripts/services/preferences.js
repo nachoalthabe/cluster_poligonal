@@ -87,6 +87,9 @@ angular.module('frontApp')
       },{
         name: 'clusters',
         default: []
+      },{
+        name: 'calculo_semillas',
+        default: false
       }
     ]
 
