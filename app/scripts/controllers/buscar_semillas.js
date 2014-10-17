@@ -160,13 +160,13 @@ angular.module('frontApp')
     $scope.seleccionarSemillas = function(alpha){
       var radio_alpha = $scope.radio_preferencial * alpha;
       $scope.featuresOrdenadas = $scope.ol_features.sort(function(a, b) {
-        return a.get('rating') - b.get('rating');
+        return b.get('rating') - a.get('rating');
       });
 
       $scope.semillas.push($scope.featuresOrdenadas.pop());
 
 
-      $scope.featuresOrdenadas.forEach(function(feature){
+      _.reject($scope.featuresOrdenadas,function(feature){
         //Hago un extent con los dos centro
         var centro_feature = feature.get('centro') || false;
         if(!centro_feature){
@@ -193,6 +193,7 @@ angular.module('frontApp')
           $scope.source_libres.removeFeature(feature);
           $scope.desconectar_vecinos(feature);
         }
+        return false;
       });
 
       preferences.set_clusters($scope.semillas);
@@ -208,7 +209,6 @@ angular.module('frontApp')
 
         $scope.source_semillas_radios.addFeature(radio);
       });
-
     }
 
     $scope.desconectar_vecinos = function(feature){

@@ -215,6 +215,7 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
     } catch (variable) {
       // continue;
     }
+    preferences.persistir();
     $location.path('juntar');
   }
 

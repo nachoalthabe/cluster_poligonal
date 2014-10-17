@@ -14,10 +14,10 @@ angular.module('frontApp')
     calculos.h = function(cluster){
       var actual = cluster.get(preferences.propiedad_para_calcular),
           objetivo = preferences.propiedad_objetivo,
-          jsts = features.feature_a_jsts(cluster)
-          4pi = 4*Math.PI,
+          jsts = features.feature_a_jsts(cluster),
+          cuatro_pi = 4*Math.PI,
           comp_a = ( jsts.getLength() * jsts.getLength() ) / jsts.getArea();
-      return ( ( objetivo - actual ) / objetivo ) + ( ( 4pi - comp_a ) / 4pi );
+      return ( ( objetivo - actual ) / objetivo ) + ( ( cuatro_pi - comp_a ) / cuatro_pi );
     }
 
     calculos.mejor_cluster = function(vector_de_clusters){

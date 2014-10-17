@@ -105,7 +105,7 @@ angular.module('frontApp')
 
     self.init = function(){
       para_persistir.forEach(function(propiedad){
-        self[propiedad.name] = localStorage.getItem(propiedad) || propiedad.default;
+        self[propiedad.name] = localStorage.getItem(propiedad.name) || propiedad.default;
       });
     }
 
