@@ -83,6 +83,7 @@ angular.module('frontApp')
     };
 
     self.reset_current = function(){
+      preferences.reset();
       self.current = self.source = self.layer = false;
       try {
         localStorage.removeItem("current_json");
@@ -92,6 +93,7 @@ angular.module('frontApp')
     };
 
     self.update_current = function(){
+      preferences.persistir();
       var parser = new ol.format.GeoJSON();
       var geojson = parser.writeFeatures(self.get_source().getFeatures());
       self.set_current(geojson);

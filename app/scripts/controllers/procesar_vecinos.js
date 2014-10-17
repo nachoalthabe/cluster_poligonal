@@ -63,6 +63,7 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
       $scope.source_union.clear();
     }
     var feature = $scope.ol_features[$scope.proceso_indices];
+    preferences.propiedad_suma_total += feature.get(preferences.propiedad_para_calcular);
     var desde_nombre = feature.getProperties().NOMBRE;
     var id = _.uniqueId('feature_');
 
@@ -200,6 +201,7 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
   $scope.listo = false;
 
   $scope.init = function(){
+    preferences.propiedad_suma_total = 0;
     $scope.crear_indices();
   }
 
@@ -213,6 +215,7 @@ angular.module('frontApp').controller('ProcesarVecinosCtrl', function ($scope,fe
     } catch (variable) {
       // continue;
     }
+    preferences.persistir();
     $location.path('juntar');
   }
 

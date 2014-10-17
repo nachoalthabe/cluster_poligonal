@@ -19,35 +19,15 @@ angular.module('frontApp')
         return;
       };
 
-      $scope.source = features.get_source();
-      $scope.layer = features.get_layer();
-
-      preferences.view = new ol.View({
-        center: ol.proj.transform([0,0], 'EPSG:4326', 'EPSG:3857'),
-        zoom: 4,
-        projection: 'EPSG:3857'
-      });
-
-      $scope.map = new ol.Map({
-        target: 'map',
-        layers: [
-          new ol.layer.Tile({
-            source: new ol.source.OSM()
-          }),
-          $scope.layer
-        ],
-        view: preferences.view
-      });
-
-      preferences.setMap($scope.map);
-
+      preferences.map.addLayer(features.get_layer());
 
       try {
-        preferences.view.fitExtent($scope.source.getExtent());
+        preferences.view.fitExtent(features.get_source().getExtent());
       } catch (variable) {
         // continue;
       }
     }
-
-    $scope.init();
+    $scope.$on('map',function(){
+      $scope.init();
+    });
   });
