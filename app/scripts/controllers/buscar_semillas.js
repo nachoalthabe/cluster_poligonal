@@ -98,7 +98,11 @@ angular.module('frontApp')
           return function(feature, resolution) {
             return [new ol.style.Style({
               fill: new ol.style.Fill({
-                color: [0,0,255,.8]
+                color: [0,0,255,.2]
+              }),
+              stroke: new ol.style.Stroke({
+                color: [0,0,0,.5],
+                width: 2
               })
             })];
           };
@@ -168,12 +172,12 @@ angular.module('frontApp')
       $scope.seleccionarSemillas(1);
     }
 
-    $scope.clusters_activos = [];
     $scope.clusters = [];
+    $scope.clusters_map = {};
 
     $scope.limites_alpha = [];
 
-    $scope.features_libres = {};
+    $scope.features_map = {};
 
     $scope.calcular_limites_alpha = function(_min,_max){
       var min = Math.round(_min*10)/10,
@@ -225,11 +229,11 @@ angular.module('frontApp')
 
         var distancia_minima = new ol.geom.LineString([mas_cercana.get('centro'),feature.get('centro')]).getLength();
 
+        $scope.features_map[feature.getId()] = feature;
         if(distancia_minima > radio_alpha && $scope.clusters.length < $scope.clusters_cantidad){
           $scope.clusters.push(feature);
-          $scope.desconectar_vecinos(feature);
-        }else{
-          $scope.features_libres[feature.getId()] = feature;
+          $scope.clusters_map[feature.getId()] = feature;
+          //$scope.desconectar_vecinos(feature);
         }
         return false;
       });
@@ -266,15 +270,17 @@ angular.module('frontApp')
     }
 
     $scope.hacer_todo = false;
-
+    $scope.hay_punto_muerto = false
     $scope.mejor_cluster = false;
     $scope.mc = function(){
-      if($scope.clusters_activos.length == 0){
-        return;
+      var clusters_local;
+      if($scope.hay_punto_muerto){
+        clusters_local = calculos.cluster_sin_pm($scope.clusters);
+      }else{
+        clusters_local = $scope.clusters;
       }
-      $scope.hay_punto_muerto = false;
       $scope.source_mc.clear();
-      $scope.mejor_cluster = calculos.mejor_cluster($scope.clusters_activos,$scope.features_libres);
+      $scope.mejor_cluster = calculos.mejor_cluster(clusters_local,$scope.features_map);
       $scope.source_mc.addFeature($scope.mejor_cluster);
 
       var pan = ol.animation.pan({
@@ -298,7 +304,7 @@ angular.module('frontApp')
     $scope.poligonos_posibles = false;
     $scope.pp = function(){
       $scope.source_pp.clear();
-      $scope.poligonos_posibles = calculos.poligonos_posibles($scope.mejor_cluster,$scope.features_libres);
+      $scope.poligonos_posibles = calculos.poligonos_posibles($scope.mejor_cluster,$scope.features_map);
       //No puede crecer mas
       if($scope.poligonos_posibles.length == 0){
         $scope.clusters_activos = $scope.clusters_activos.filter(function(cluster){
@@ -330,17 +336,19 @@ angular.module('frontApp')
       }
     }
 
-    $scope.juntar = function(){
-      calculos.juntar($scope.mejor_cluster,$scope.mejor_poligono,$scope.features_libres);
+    $scope.actualizar = function(){
+      $scope.hay_punto_muerto = !calculos.actualizar($scope.mejor_cluster,$scope.mejor_poligono,$scope.features_map,$scope.clusters_map);
+
       $scope.mejor_cluster = false;
       $scope.source_mc.clear();
       $scope.poligonos_posibles = false;
       $scope.source_pp.clear();
       $scope.mejor_poligono = false;
       $scope.source_mp.clear();
+
       if($scope.hacer_todo){
         setTimeout(function(){
-          $scope.mc();
+          calculos.mc();
         },100);
       }
     }
