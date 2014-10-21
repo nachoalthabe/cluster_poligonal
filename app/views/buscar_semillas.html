@@ -22,7 +22,7 @@
         <button ng-click="mc()" ng-disabled="!(mejor_cluster == false)" type="button" class="btn btn-default">Mejor Cluster</button>
         <button ng-click="pp()" ng-disabled="!(mejor_cluster && poligonos_posibles == false)" type="button" class="btn btn-default">Poligonos Posibles</button>
         <button ng-click="mp()" ng-disabled="!(poligonos_posibles && mejor_poligono == false)" type="button" class="btn btn-default">Mejor Poligono</button>
-        <button ng-click="juntar()" ng-disabled="(mejor_poligono == false)"type="button" disabled class="btn btn-default">Actualizar Cluster</button>
+        <button ng-click="actualizar()" ng-disabled="(mejor_poligono == false)"type="button" disabled class="btn btn-default">Actualizar Cluster</button>
       </div>
       <div ng-show="hay_punto_muerto">
         <div class="alert alert-danger" role="alert">Se encontro un Punto Muerto!</div>
