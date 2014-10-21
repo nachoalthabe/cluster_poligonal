@@ -311,7 +311,7 @@ angular.module('frontApp')
     $scope.mejor_poligono = false;
     $scope.mp = function(){
       $scope.source_mp.clear();
-      $scope.mejor_poligono = calculos.mejor_poligono($scope.mejor_cluster,$scope.poligonos_posibles);
+      $scope.mejor_poligono = calculos.mejor_poligono($scope.mejor_cluster,$scope.clusters,$scope.features_map,$scope.semillas_id,$scope.poligonos_asignados,$scope.poligonos_posibles);
       $scope.source_mp.addFeature($scope.mejor_poligono);
       if($scope.hacer_todo){
         $scope.actualizar();
@@ -330,7 +330,7 @@ angular.module('frontApp')
 
       if($scope.hacer_todo){
         setTimeout(function(){
-          calculos.mc();
+          $scope.mc();
         },100);
       }
     }

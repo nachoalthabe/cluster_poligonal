@@ -21,7 +21,8 @@ angular.module('frontApp')
     calculos.hp = function(cluster){
       var actual = cluster.get(preferences.propiedad_para_calcular),
           objetivo = preferences.propiedad_objetivo;
-      return Math.abs( ( objetivo - actual ) / objetivo );
+      //return Math.abs( ( objetivo - actual ) / objetivo );
+      return ( objetivo - actual ) / objetivo;
     }
 
     calculos.h = function(cluster){
@@ -69,7 +70,8 @@ angular.module('frontApp')
           partes = cluster.get('_partes'),
           poligono_vecinos = poligono.get('_vecinos'),
           frontera_suma = 0;
-
+      if(typeof vecinos[poligono.getId()] == 'undefined')
+        return 0;
       _.each(poligono_vecinos,function(frontera,vecino_id){
         vecino_id = parseInt(vecino_id);
         if(poligonos_asignados.indexOf(vecino_id) >= 0)
@@ -86,18 +88,20 @@ angular.module('frontApp')
     };
 
     calculos.g1 = function(clusters,poligono,poligonos,semillas,poligonos_asignados){
+      var resultado = 0;
       _.each(clusters,function(cluster){
         var poligonos_posibles = calculos.poligonos_posibles(cluster,poligonos,semillas),
-            pp_id = _.eval(poligonos_posibles, function(poligono){
+            pp_id = _.map(poligonos_posibles, function(poligono){
               return poligono.getId();
             });
 
         var id = parseInt(poligono.getId());
         if(pp_id.indexOf(id) >= 0){
 
-          calculos.frontera_con_poligono(cluster,poligono,poligonos_asignados);
+          resultado += calculos.frontera_con_poligono(cluster,poligono,poligonos_asignados);
         }
       });
+      return resultado;
     }
 
     calculos.f = function(cluster,poligonos,poligonos_asignados){
@@ -115,9 +119,9 @@ angular.module('frontApp')
         return calculos.f(b,poligonos,poligonos_asignados) - calculos.f(a,poligonos,poligonos_asignados); //Desendiente
       });
 
-      var mayor = calculos.h(ordenados[0]);
+      var mayor = calculos.f(ordenados[0],poligonos,poligonos_asignados);
       var mayores = ordenados.filter(function(a){
-        return (calculos.h(a,poligonos,poligonos_asignados) == mayor);
+        return (calculos.f(a,poligonos,poligonos_asignados) == mayor);
       });
 
       if(mayores.length == 1){
@@ -147,38 +151,19 @@ angular.module('frontApp')
       return vecinos;
     }
 
-    calculos.mejor_poligono = function(cluster,posibles_vecinos){
-      var vecinos_base = cluster.get('_vecinos'),
-          fronteras_posibles = [];
+    calculos.mejor_poligono = function(cluster,clusters,poligonos,semillas,poligonos_asignados,posibles_vecinos){
+      var fronteras_posibles = [];
 
       //calculo todas las posibles fronteras
       _.each(posibles_vecinos,function(vecino){
-        var vecinos_vecino = vecino.get('_vecinos'),
-            vecinos_suma = _.clone(vecinos_base),
-            frontera_final = 0;
-        //Lo primero es eliminar la frontra comun para simular que es parte del cluster.
-        delete vecinos_suma[vecino.getId()];
-        //No lo borro del lado del vecino porque este ya no conoce al cluster.
-        _.each(vecinos_vecino,function(frontera,vecino_id){
-          if(!vecinos_suma[vecino_id])
-            vecinos_suma[vecino_id] = frontera
-          else
-            vecinos_suma[vecino_id] += frontera;
-        });
-
-        //Sumo todas las fronteras y lo cargo en el mapa
-        _.each(vecinos_suma,function(frontera){
-          frontera_final += frontera;
-        })
-
         fronteras_posibles.push({
           poligono: vecino,
-          frontera: frontera_final
-        });
+          g1: calculos.g1(clusters,vecino,poligonos,semillas,poligonos_asignados)
+        })
       });
 
-      var mayor = _.max(fronteras_posibles,function(vecino){
-        return vecino.frontera
+      var mayor = _.min(fronteras_posibles,function(vecino){
+        return vecino.g1
       })
 
       return mayor.poligono;
