@@ -151,6 +151,22 @@ angular.module('frontApp')
       return vecinos;
     }
 
+    //Todas las partes deven ser vecinas de otra parte
+    calculos.rompe_continuidad = function(cluster,poligono,poligonos){
+      //Todas las partes menos la que voy a sacar
+      var partes = cluster.get('_partes').filter(function(parte){
+        return (parte != poligono.getId());
+      });
+
+      return !_.some(partes,function(id){
+        var poligono = poligonos[id],
+            vecinos = poligono.get('_vecinos');
+        return !_.some(vecinos,function(frontera,id){
+          return (partes.indexOf(id) >= 0);
+        });
+      });
+    }
+
     calculos.mejor_poligono = function(cluster,clusters,poligonos,semillas,poligonos_asignados,posibles_vecinos){
       var fronteras_posibles = [];
 
@@ -166,6 +182,14 @@ angular.module('frontApp')
         return vecino.g1
       })
 
+      if(mayor.poligono.get('_cluster') || false){
+        if(calculos.rompe_continuidad(cluster,mayor.poligono,poligonos)){
+          posibles_vecinos = posibles_vecinos.filter(function(poligono){
+            return poligono.getId() != mayor.poligono.getId();
+          })
+          mayor.poligono = calculos.mejor_poligono(cluster,clusters,poligonos,semillas,poligonos_asignados,posibles_vecinos)
+        }
+      }
       return mayor.poligono;
     }
 
