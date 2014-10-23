@@ -16,39 +16,47 @@ angular.module('frontApp')
           cuatro_pi = 4*Math.PI,
           area = jsts.getArea(),
           perimetro_cuadrado = Math.pow(jsts.getLength(),2);
-      return (cuatro_pi*area)/perimetro_cuadrado;
+      return 1-( (cuatro_pi*area)/perimetro_cuadrado );
     }
     calculos.hp = function(cluster){
       var actual = cluster.get(preferences.propiedad_para_calcular),
           objetivo = preferences.propiedad_objetivo;
-      //return Math.abs( ( objetivo - actual ) / objetivo );
-      return ( objetivo - actual ) / objetivo;
+      return Math.abs( ( objetivo - actual ) / objetivo );
+      //return ( objetivo - actual ) / objetivo;
     }
 
     calculos.h = function(cluster){
       return calculos.hp(cluster) + calculos.hc(cluster) ;
     }
 
-    calculos.g = function(cluster,poligonos,poligonos_asignados){
+    //Calcular por todos los clusters el impacto de sumarles cada uno de los posibles vesinos del cluster a calcular.
+    //Retornar el mayor valor
+    calculos.g = function(cluster,clusters,poligonos,poligonos_asignados){
       var vecinos = cluster.get('_vecinos'),
           frontera_actual = calculos.frontera_actual(cluster,poligonos_asignados),
           fronteras_posibles = {},
           mayor_frontera = 0; //{ id: frontera }
 
+      var mayor = {
+        cluster: 0,
+        g: 0
+      }
+      _.each(clusters,function(k){
+        var frontera_k = calculos.frontera_actual(k,poligonos_asignados);
+        //calculo todas las posibles fronteras
+        _.each(vecinos,function(frontera,vecino_id){
+          var vecino = poligonos[vecino_id];
+          var frontera_k_i = calculos.frontera_con_poligono(cluster,vecino,poligonos_asignados);
+          var k_i_g = Math.abs((frontera_k-frontera_k_i)/frontera_k);
+          if (k_i_g > mayor.g){
+            mayor.cluster = k,
+            mayor.g = k_i_g;
+          }
+        });
+      })
 
-      //calculo todas las posibles fronteras
-      _.each(vecinos,function(frontera,vecino_id){
-        var vecino = poligonos[vecino_id];
-        fronteras_posibles[vecino_id] = calculos.frontera_con_poligono(cluster,vecino,poligonos_asignados);
-      });
 
-      //recupero la frontera maxima
-      mayor_frontera = _.max(fronteras_posibles,function(frontera){
-        return frontera;
-      });
-
-      //Calculo G y lo retorno
-      return (frontera_actual-mayor_frontera)/frontera_actual
+      return mayor.g;
     }
 
     calculos.frontera_actual = function(cluster,poligonos_asignados){
@@ -90,22 +98,23 @@ angular.module('frontApp')
     calculos.g1 = function(clusters,poligono,poligonos,semillas,poligonos_asignados){
       var resultado = 0;
       _.each(clusters,function(cluster){
-        var poligonos_posibles = calculos.poligonos_posibles(cluster,poligonos,semillas),
+        var actual = calculos.frontera_actual(cluster,poligonos_asignados),
+            poligonos_posibles = calculos.poligonos_posibles(cluster,poligonos,semillas,poligonos_asignados),
             pp_id = _.map(poligonos_posibles, function(poligono){
               return poligono.getId();
             });
 
         var id = parseInt(poligono.getId());
         if(pp_id.indexOf(id) >= 0){
-
-          resultado += calculos.frontera_con_poligono(cluster,poligono,poligonos_asignados);
+          var frontera_nueva = calculos.frontera_con_poligono(cluster,poligono,poligonos_asignados);
+          resultado += (actual-frontera_nueva)/actual;
         }
       });
       return resultado;
     }
 
-    calculos.f = function(cluster,poligonos,poligonos_asignados){
-      return calculos.g(cluster,poligonos,poligonos_asignados) + calculos.h(cluster);
+    calculos.f = function(cluster,clusters,poligonos,poligonos_asignados){
+      return calculos.g(cluster,clusters,poligonos,poligonos_asignados) + calculos.h(cluster);
     }
 
     calculos.f1 = function(clusters,poligono,poligonos,semillas,poligonos_asignados){
@@ -116,12 +125,12 @@ angular.module('frontApp')
 
     calculos.mejor_cluster = function(clusters,poligonos,poligonos_asignados){
       var ordenados = clusters.sort(function(a,b){
-        return calculos.f(b,poligonos,poligonos_asignados) - calculos.f(a,poligonos,poligonos_asignados); //Desendiente
+        return calculos.f(b,clusters,poligonos,poligonos_asignados) - calculos.f(a,clusters,poligonos,poligonos_asignados); //Desendiente
       });
 
-      var mayor = calculos.f(ordenados[0],poligonos,poligonos_asignados);
+      var mayor = calculos.f(ordenados[0],clusters,poligonos,poligonos_asignados);
       var mayores = ordenados.filter(function(a){
-        return (calculos.f(a,poligonos,poligonos_asignados) == mayor);
+        return (calculos.f(a,clusters,poligonos,poligonos_asignados) == mayor);
       });
 
       if(mayores.length == 1){
@@ -135,7 +144,8 @@ angular.module('frontApp')
       }
     }
 
-    calculos.poligonos_posibles = function(cluster,features,semillas){
+    //Si hay libres retorna solo esos, si no hay retorna todos.
+    calculos.poligonos_posibles = function(cluster,features,semillas,poligonos_asignados){
       var vecinos_id = cluster.get('_vecinos'),
           partes = cluster.get('_partes'),
           vecinos = [];
@@ -146,29 +156,37 @@ angular.module('frontApp')
           return;
         if(partes.indexOf(vecino_id) >= 0)
           return;
+        if(poligonos_asignados.indexOf(vecino_id) >= 0)
+          return
         vecinos.push(features[vecino_id]);
-      })
+      });
+
+      if (vecinos.length == 0){
+        _.each(vecinos_id,function(frontera_comun,vecino_id){
+          vecino_id = parseInt(vecino_id);
+          if(semillas.indexOf(vecino_id) >= 0)
+            return;
+          if(partes.indexOf(vecino_id) >= 0)
+            return;
+          vecinos.push(features[vecino_id]);
+        });
+      }
       return vecinos;
     }
 
     //Todas las partes deven ser vecinas de otra parte
     calculos.rompe_continuidad = function(cluster,poligono,poligonos){
-      //Todas las partes menos la que voy a sacar
-      var partes = cluster.get('_partes').filter(function(parte){
-        return (parte != poligono.getId());
-      });
+      var jsts_cluster = features.feature_a_jsts(cluster),
+          jsts_poligono = features.feature_a_jsts(poligono);
 
-      return !_.some(partes,function(id){
-        var poligono = poligonos[id],
-            vecinos = poligono.get('_vecinos');
-        return !_.some(vecinos,function(frontera,id){
-          return (partes.indexOf(id) >= 0);
-        });
-      });
+      return !(jsts_cluster.difference(jsts_poligono).getGeometryType() == 'Polygon');
     }
 
-    calculos.mejor_poligono = function(cluster,clusters,poligonos,semillas,poligonos_asignados,posibles_vecinos){
-      var fronteras_posibles = [];
+    var iteracion = 0;
+    calculos.mejor_poligono = function(cluster,clusters,clusters_map,poligonos,semillas,poligonos_asignados,posibles_vecinos){
+      var fronteras_posibles = [],
+          resultado;
+
 
       //calculo todas las posibles fronteras
       _.each(posibles_vecinos,function(vecino){
@@ -182,26 +200,42 @@ angular.module('frontApp')
         return vecino.g1
       })
 
-      if(mayor.poligono.get('_cluster') || false){
-        if(calculos.rompe_continuidad(cluster,mayor.poligono,poligonos)){
+      var cluster_actual = mayor.poligono.get('_cluster') || false;
+
+      if(cluster_actual != false){
+        if(calculos.rompe_continuidad(clusters_map[cluster_actual],mayor.poligono,poligonos)){
+          if(posibles_vecinos.length == 1){
+            return false
+          }
           posibles_vecinos = posibles_vecinos.filter(function(poligono){
-            return poligono.getId() != mayor.poligono.getId();
+            return poligono.getId() == mayor.poligono.getId();
           })
-          mayor.poligono = calculos.mejor_poligono(cluster,clusters,poligonos,semillas,poligonos_asignados,posibles_vecinos)
+          resultado = calculos.mejor_poligono(cluster,clusters,clusters_map,poligonos,semillas,poligonos_asignados,posibles_vecinos)
+        }else{
+          resultado = mayor.poligono;
         }
+      }else{
+        resultado = mayor.poligono;
       }
-      return mayor.poligono;
+      return resultado;
     }
 
-    var iteracion = 0;
-    calculos.actualizar = function(cluster,poligono,cluster_map){
+
+    calculos.actualizar = function(cluster,poligono,poligonos,cluster_map){
       iteracion ++;
+      if(poligono == false){
+        if(calculos.pm(cluster)){
+          return false;
+        }else{
+          return true;
+        }
+      }
       var cluster_asignado = poligono.get('_cluster') || false;
       if (cluster_asignado == false){
         calculos.cluster_agregar(cluster,poligono);
         return true;
       }else{
-        var cluster_anterior = cluster_map[cluster.getId()];
+        var cluster_anterior = cluster_map[cluster_asignado];
         calculos.cluster_quitar(cluster_anterior,poligono);
         calculos.cluster_agregar(cluster,poligono);
         if(calculos.pm(cluster)){
@@ -209,7 +243,6 @@ angular.module('frontApp')
         }else{
           return true;
         }
-
       }
     }
 
@@ -246,7 +279,7 @@ angular.module('frontApp')
       //Lo quito de la lista de poligonos del cluster
       var partes = cluster.get('_partes') || [];
       partes = _.filter(partes,function(id){
-        return (poligono.getId() =! id);
+        return (poligono.getId() != id);
       });
       //Agrego vecindad al cluster siempre que sea con alguna de sus componentes
       var vecinos_poligono = poligono.get('_vecinos'),
@@ -260,11 +293,13 @@ angular.module('frontApp')
       })
       //Actualizo variables
       cluster.set('_partes',partes);
-      cluster.set('_vecinos',vecinos);
+      cluster.set('_vecinos',vecinos_cluster);
       cluster.set(preferences.propiedad_para_calcular,cluster.get(preferences.propiedad_para_calcular)-poligono.get(preferences.propiedad_para_calcular));
+      poligono.set('_cluster',false);
       //Actualizo geometria
       var jsts_cluster = features.feature_a_jsts(cluster),
           jsts_poligono = features.feature_a_jsts(poligono);
+
 
       var difference = features.jsts_a_feature(jsts_cluster.difference(jsts_poligono));
       cluster.setGeometry(difference.getGeometry());
@@ -278,9 +313,11 @@ angular.module('frontApp')
       })
       pm_log = pm_log.slice(0,preferences.cantidad_de_semillas);
       var consecutivos = iteracion,
-          cluster_id = cluster.getId();
+          cluster_id = cluster.getId(),
+          pm_cant = 0;
       _.every(pm_log,function(pm_reg,index){
         consecutivos --;
+        pm_cant ++;
         return (pm_reg.iteracion == consecutivos)//si es consegutivo
             && (pm_reg.cluster != cluster_id);//y no es el mismo cluster
       });
@@ -305,6 +342,7 @@ angular.module('frontApp')
         _partes: [feature.getId()],
         _vecinos: feature.get('_vecinos')
       });
+      cluster.setId(feature.getId());
       cluster.set(preferences.propiedad_para_calcular,feature.get(preferences.propiedad_para_calcular));
       return cluster;
     }

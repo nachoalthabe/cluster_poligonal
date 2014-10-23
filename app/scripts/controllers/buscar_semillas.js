@@ -59,7 +59,7 @@ angular.module('frontApp')
           return function(feature, resolution) {
             return [new ol.style.Style({
               fill: new ol.style.Fill({
-                color: [255,0,0,.8]
+                color: [255,255,255,1]
               }),
               stroke: new ol.style.Stroke({
                 color: [0,0,0,.8]
@@ -116,9 +116,9 @@ angular.module('frontApp')
         style: (function() {
           return function(feature, resolution) {
             return [new ol.style.Style({
-              stroke: new ol.style.Stroke({
-                color: [255,0,0,.8]
-              })
+              fill: new ol.style.Fill({
+                color: [0,255,255,1]
+              }),
             })];
           };
         })()
@@ -254,10 +254,15 @@ angular.module('frontApp')
     $scope.hacer_todo = false;
     $scope.hay_punto_muerto = false
     $scope.mejor_cluster = false;
-    $scope.mc = function(){
+    $scope.mc = function(sin_cluster){
+      var sin_cluster = sin_cluster || false;
       var clusters_local;
       if($scope.hay_punto_muerto){
         clusters_local = calculos.cluster_sin_pm($scope.clusters);
+      }else if(sin_cluster != false){
+        clusters_local = $scope.clusters.filter(function(cluster){
+          return cluster.getId() != sin_cluster.getId();
+        })
       }else{
         clusters_local = $scope.clusters;
       }
@@ -286,7 +291,7 @@ angular.module('frontApp')
     $scope.poligonos_posibles = false;
     $scope.pp = function(){
       $scope.source_pp.clear();
-      $scope.poligonos_posibles = calculos.poligonos_posibles($scope.mejor_cluster,$scope.features_map,$scope.semillas_id);
+      $scope.poligonos_posibles = calculos.poligonos_posibles($scope.mejor_cluster,$scope.features_map,$scope.semillas_id,$scope.poligonos_asignados);
       //No puede crecer mas
       if($scope.poligonos_posibles.length == 0){
         $scope.clusters_activos = $scope.clusters_activos.filter(function(cluster){
@@ -311,8 +316,10 @@ angular.module('frontApp')
     $scope.mejor_poligono = false;
     $scope.mp = function(){
       $scope.source_mp.clear();
-      $scope.mejor_poligono = calculos.mejor_poligono($scope.mejor_cluster,$scope.clusters,$scope.features_map,$scope.semillas_id,$scope.poligonos_asignados,$scope.poligonos_posibles);
-      $scope.source_mp.addFeature($scope.mejor_poligono);
+      $scope.mejor_poligono = calculos.mejor_poligono($scope.mejor_cluster,$scope.clusters,$scope.clusters_map,$scope.features_map,$scope.semillas_id,$scope.poligonos_asignados,$scope.poligonos_posibles);
+      if($scope.mejor_poligono != false){
+        $scope.source_mp.addFeature($scope.mejor_poligono);
+      }
       if($scope.hacer_todo){
         $scope.actualizar();
       }
