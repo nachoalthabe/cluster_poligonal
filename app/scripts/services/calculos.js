@@ -307,19 +307,19 @@ angular.module('frontApp')
 
     var pm_log = [];
     calculos.pm = function(cluster){
-      pm_log.push({
+      pm_log.unshift({
         cluster: cluster.getId(),
-        itercacion: iteracion
+        iteracion: iteracion
       })
       pm_log = pm_log.slice(0,preferences.cantidad_de_semillas);
-      var consecutivos = iteracion,
+      var consecutivos = iteracion+1,
           cluster_id = cluster.getId(),
           pm_cant = 0;
       _.every(pm_log,function(pm_reg,index){
         consecutivos --;
         pm_cant ++;
-        return (pm_reg.iteracion == consecutivos)//si es consegutivo
-            && (pm_reg.cluster != cluster_id);//y no es el mismo cluster
+        return (pm_reg.iteracion == consecutivos);//si es consegutivo
+            //&& (pm_reg.cluster != cluster_id);//y no es el mismo cluster
       });
       return (pm_cant == preferences.cantidad_de_semillas);//Si llego al k-1 sin encontrarlo o con un salto en la secuencia
     }

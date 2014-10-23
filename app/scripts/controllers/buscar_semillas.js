@@ -327,7 +327,8 @@ angular.module('frontApp')
 
     $scope.actualizar = function(){
       $scope.hay_punto_muerto = !calculos.actualizar($scope.mejor_cluster,$scope.mejor_poligono,$scope.features_map,$scope.clusters_map);
-      $scope.agregar_poligono_asignado($scope.mejor_poligono);
+      if($scope.mejor_poligono != false)
+        $scope.agregar_poligono_asignado($scope.mejor_poligono);
       $scope.mejor_cluster = false;
       $scope.source_mc.clear();
       $scope.poligonos_posibles = false;
