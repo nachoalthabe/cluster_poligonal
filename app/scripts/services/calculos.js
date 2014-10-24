@@ -177,9 +177,14 @@ angular.module('frontApp')
     //Todas las partes deven ser vecinas de otra parte
     calculos.rompe_continuidad = function(cluster,poligono,poligonos){
       var jsts_cluster = features.feature_a_jsts(cluster),
-          jsts_poligono = features.feature_a_jsts(poligono);
-
-      return !(jsts_cluster.difference(jsts_poligono).getGeometryType() == 'Polygon');
+          jsts_poligono = features.feature_a_jsts(poligono),
+          diferencia = jsts_cluster.difference(jsts_poligono);
+      if(diferencia.getGeometryType() == 'Polygon')
+        return false;
+      if(diferencia.geometries.length > 1){
+        return true;
+      }
+      return false;
     }
 
     var iteracion = 0;
@@ -208,7 +213,7 @@ angular.module('frontApp')
             return false
           }
           posibles_vecinos = posibles_vecinos.filter(function(poligono){
-            return poligono.getId() == mayor.poligono.getId();
+            return poligono.getId() != mayor.poligono.getId();
           })
           resultado = calculos.mejor_poligono(cluster,clusters,clusters_map,poligonos,semillas,poligonos_asignados,posibles_vecinos)
         }else{
@@ -311,7 +316,6 @@ angular.module('frontApp')
         cluster: cluster.getId(),
         iteracion: iteracion
       })
-      pm_log = pm_log.slice(0,preferences.cantidad_de_semillas);
       var consecutivos = iteracion+1,
           cluster_id = cluster.getId(),
           pm_cant = 0;
@@ -321,15 +325,16 @@ angular.module('frontApp')
         return (pm_reg.iteracion == consecutivos);//si es consegutivo
             //&& (pm_reg.cluster != cluster_id);//y no es el mismo cluster
       });
-      return (pm_cant == preferences.cantidad_de_semillas);//Si llego al k-1 sin encontrarlo o con un salto en la secuencia
+      return (pm_cant > 2);//Si llego al k-1 sin encontrarlo o con un salto en la secuencia
     }
 
     calculos.cluster_sin_pm = function(clusters){
-      var pm_log_ids = _.pluck(pm_log,'cluster'),
-          cluster_id = pm_log_ids.pop(),
-          sucios = _.filter(pm_log_ids,function(pm_id,index){
-            return (pm_id != cluster_id);//y no es el mismo cluster
-          }),
+      var consecutivos = iteracion + 1;
+      pm_log = pm_log.filter(function(log){
+        consecutivos --;
+        return (log.iteracion == consecutivos);
+      })
+      var sucios = _.pluck(pm_log,'cluster'),
           limpios = _.filter(clusters,function(cluster){
             return (sucios.indexOf(cluster.getId()) < 0);
           })

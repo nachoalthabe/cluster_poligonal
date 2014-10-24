@@ -59,7 +59,7 @@ angular.module('frontApp')
           return function(feature, resolution) {
             return [new ol.style.Style({
               fill: new ol.style.Fill({
-                color: [255,255,255,1]
+                color: [255,255,255,.3]
               }),
               stroke: new ol.style.Stroke({
                 color: [0,0,0,.8]
