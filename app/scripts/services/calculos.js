@@ -175,14 +175,27 @@ angular.module('frontApp')
       return vecinos;
     }
 
+    calculos.id_igual = function(id1,id2){
+      return parseInt(id1) == parseInt(id2);
+    }
+
     //Todas las partes deven ser vecinas de otra parte
     calculos.rompe_continuidad = function(cluster,poligono,poligonos){
-      var jsts_cluster = features.feature_a_jsts(cluster),
-          jsts_poligono = features.feature_a_jsts(poligono),
-          diferencia = jsts_cluster.difference(jsts_poligono);
-      if(diferencia.getGeometryType() == 'Polygon')
+      var partes_id = cluster.get('_partes'),
+          union = false;
+      partes_id.forEach(function(id){
+        if(calculos.id_igual(id,poligono.getId()))
+          return;
+        if(union == false){
+          union = features.feature_a_jsts(poligonos[id]);
+        }else{
+          union = union.union(features.feature_a_jsts(poligonos[id]));
+        }
+      })
+
+      if(union.getGeometryType() == 'Polygon')
         return false;
-      if(diferencia.geometries.length > 1){
+      if(union.geometries.length > 1){
         return true;
       }
       return false;
@@ -214,7 +227,7 @@ angular.module('frontApp')
             return false
           }
           posibles_vecinos = posibles_vecinos.filter(function(poligono){
-            return poligono.getId() != mayor.poligono.getId();
+            return !calculos.id_igual(poligono.getId(),mayor.poligono.getId());
           })
           resultado = calculos.mejor_poligono(cluster,clusters,clusters_map,poligonos,semillas,poligonos_asignados,posibles_vecinos)
         }else{
@@ -238,12 +251,12 @@ angular.module('frontApp')
       }
       var cluster_asignado = poligono.get('_cluster') || false;
       if (cluster_asignado == false){
-        calculos.cluster_agregar(cluster,poligono);
+        calculos.cluster_agregar(cluster,poligono,poligonos);
         return true;
       }else{
         var cluster_anterior = cluster_map[cluster_asignado];
-        calculos.cluster_quitar(cluster_anterior,poligono);
-        calculos.cluster_agregar(cluster,poligono);
+        calculos.cluster_quitar(cluster_anterior,poligono,poligonos);
+        calculos.cluster_agregar(cluster,poligono,poligonos);
         if(calculos.pm(cluster)){
           return false;
         }else{
@@ -252,64 +265,56 @@ angular.module('frontApp')
       }
     }
 
-    calculos.cluster_agregar= function(cluster,poligono){
+    calculos.cluster_agregar= function(cluster,poligono,poligonos){
       //Lo agrego a la lista de poligonos del cluster
       var partes = cluster.get('_partes') || [];
       partes.push(poligono.getId());
-      //Elimino la frontera en el cluster
-      var vecinos_poligono = poligono.get('_vecinos'),
-          vecinos_cluster = cluster.get('_vecinos');
-      delete vecinos_cluster[poligono.getId()];
-      //Sumo las fronteras del nuevo poligono
-      _.each(vecinos_poligono,function(frontera,id){
-        id = parseInt(id);
-        if(partes.indexOf(id) >= 0){
-          return;
-        }
-        vecinos_cluster[id] = (vecinos_cluster[id] || 0) + frontera;
-      })
-      //Actualizo variables
       cluster.set('_partes',partes);
-      cluster.set('_vecinos',vecinos_cluster);
-      cluster.set(preferences.propiedad_para_calcular,cluster.get(preferences.propiedad_para_calcular)+poligono.get(preferences.propiedad_para_calcular));
+      //Limpio el poligono
       poligono.set('_cluster',cluster.getId());
       //Actualizo geometria
-      var jsts_cluster = features.feature_a_jsts(cluster),
-          jsts_poligono = features.feature_a_jsts(poligono);
-
-      var union = features.jsts_a_feature(jsts_cluster.union(jsts_poligono));
-      cluster.setGeometry(union.getGeometry());
+      calculos.actualizar_cluster(cluster,poligonos)
     };
 
-    calculos.cluster_quitar= function(cluster,poligono){
+    calculos.cluster_quitar= function(cluster,poligono,poligonos){
       //Lo quito de la lista de poligonos del cluster
       var partes = cluster.get('_partes') || [];
       partes = _.filter(partes,function(id){
         return (poligono.getId() != id);
       });
-      //Agrego vecindad al cluster siempre que sea con alguna de sus componentes
-      var vecinos_poligono = poligono.get('_vecinos'),
-          vecinos_cluster = cluster.get('_vecinos');
-      _.each(vecinos_poligono,function(frontera,id){
-        if(partes.indexOf(id) < 0){
-          return;
-        }
-        current = vecinos_cluster[id] || 0;
-        vecinos_cluster[id] += frontera;
-      })
-      //Actualizo variables
       cluster.set('_partes',partes);
-      cluster.set('_vecinos',vecinos_cluster);
-      cluster.set(preferences.propiedad_para_calcular,cluster.get(preferences.propiedad_para_calcular)-poligono.get(preferences.propiedad_para_calcular));
+
+      //Limpio el poligono
       poligono.set('_cluster',false);
+
       //Actualizo geometria
-      var jsts_cluster = features.feature_a_jsts(cluster),
-          jsts_poligono = features.feature_a_jsts(poligono);
-
-
-      var difference = features.jsts_a_feature(jsts_cluster.difference(jsts_poligono));
-      cluster.setGeometry(difference.getGeometry());
+      calculos.actualizar_cluster(cluster,poligonos)
     };
+
+    calculos.actualizar_cluster = function(cluster,poligonos){
+      var partes_id = cluster.get('_partes'),
+          vecinos = {};
+
+      var union = false;
+      partes_id.forEach(function(id){
+        var parte = poligonos[id],
+            parte_vecinos = parte.get('_vecinos');
+        _.each(parte_vecinos,function(frontera,parte_vecino_id){
+          if(partes_id.indexOf(parte_vecino_id) >= 0)
+            return;
+          vecinos[parte_vecino_id] = (vecinos[parte_vecino_id] || 0) + frontera;
+        })
+        if(union == false){
+          union = features.feature_a_jsts(parte);
+        }else{
+          union = union.union(features.feature_a_jsts(parte));
+        }
+      });
+
+      cluster.set('_vecinos',vecinos);
+      var new_feature = features.jsts_a_feature(union);
+      cluster.setGeometry(new_feature.getGeometry());
+    }
 
     var pm_log = [];
     calculos.pm = function(cluster){

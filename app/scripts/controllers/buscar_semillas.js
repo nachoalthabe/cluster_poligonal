@@ -8,7 +8,7 @@
  * Controller of the frontApp
  */
 angular.module('frontApp')
-  .controller('BuscarSemillasCtrl', function ($scope,preferences,features, calculos) {
+  .controller('BuscarSemillasCtrl', function ($scope,$modal,preferences,features, calculos) {
     $scope.total = preferences.propiedad_suma_total;
     $scope.clusters_cantidad = preferences.cantidad_de_semillas;
     $scope.objetivo = preferences.propiedad_suma_total / preferences.cantidad_de_semillas;
@@ -23,6 +23,10 @@ angular.module('frontApp')
     $scope.limites = {
       min: Number.MAX_VALUE,
       max: Number.MIN_VALUE
+    }
+
+    $scope.config = function(){
+
     }
 
     $scope.addLayer= function(){
@@ -52,29 +56,24 @@ angular.module('frontApp')
       });
       preferences.map.addLayer($scope.layer);
 
-      $scope.source_clusters = new ol.source.Vector();
-      $scope.layer_clusters = new ol.layer.Vector({
-        source: $scope.source_clusters,
-        style: (function() {
-          return function(feature, resolution) {
-            return [new ol.style.Style({
-              fill: new ol.style.Fill({
-                color: [255,255,255,.3]
-              }),
-              stroke: new ol.style.Stroke({
-                color: [0,0,0,.8]
-              })
-            })];
-          };
-        })()
-      });
-      preferences.map.addLayer($scope.layer_clusters);
-
       $scope.source_clusters_radios = new ol.source.Vector();
       $scope.layer_clusters_radios = new ol.layer.Vector({
         source: $scope.source_clusters_radios
       })
       preferences.map.addLayer($scope.layer_clusters_radios);
+
+      $scope.event = new ol.interaction.Select();
+      preferences.map.addInteraction($scope.event);
+
+      var collection = $scope.event.getFeatures();
+      collection.on('add', function(event){
+        if(!event.element) return;
+        $scope.source_partes.clear();
+        var feature = event.element;
+        feature.get('_partes').forEach(function(parte_id){
+          $scope.source_partes.addFeature($scope.features_map[parte_id]);
+        });
+      });
 
       $scope.source_mc = new ol.source.Vector();
       $scope.layer_mc = new ol.layer.Vector({
@@ -82,8 +81,8 @@ angular.module('frontApp')
         style: (function() {
           return function(feature, resolution) {
             return [new ol.style.Style({
-              stroke: new ol.style.Stroke({
-                color: [0,0,255,.8]
+              fill: new ol.style.Fill({
+                color: [255,255,0,.8]
               })
             })];
           };
@@ -110,6 +109,25 @@ angular.module('frontApp')
       });
       preferences.map.addLayer($scope.layer_pp);
 
+      $scope.source_partes = new ol.source.Vector();
+      $scope.layer_partes = new ol.layer.Vector({
+        source: $scope.source_partes,
+        style: (function() {
+          return function(feature, resolution) {
+            return [new ol.style.Style({
+              fill: new ol.style.Fill({
+                color: [255,0,0,.3]
+              }),
+              stroke: new ol.style.Stroke({
+                color: [0,0,0,.8],
+                width: 2
+              })
+            })];
+          };
+        })()
+      });
+      preferences.map.addLayer($scope.layer_partes);
+
       $scope.source_mp = new ol.source.Vector();
       $scope.layer_mp = new ol.layer.Vector({
         source: $scope.source_mp,
@@ -124,6 +142,24 @@ angular.module('frontApp')
         })()
       });
       preferences.map.addLayer($scope.layer_mp);
+
+      $scope.source_clusters = new ol.source.Vector();
+      $scope.layer_clusters = new ol.layer.Vector({
+        source: $scope.source_clusters,
+        style: (function() {
+          return function(feature, resolution) {
+            return [new ol.style.Style({
+              fill: new ol.style.Fill({
+                color: [255,255,255,.1]
+              }),
+              stroke: new ol.style.Stroke({
+                color: [0,0,0,.8]
+              })
+            })];
+          };
+        })()
+      });
+      preferences.map.addLayer($scope.layer_clusters);
 
       $scope.initProcess();
     };
@@ -269,10 +305,10 @@ angular.module('frontApp')
       $scope.source_mc.clear();
       $scope.mejor_cluster = calculos.mejor_cluster(clusters_local,$scope.features_map,$scope.poligonos_asignados);
       $scope.source_mc.addFeature($scope.mejor_cluster);
-
+      /*
       var pan = ol.animation.pan({
         duration: 50,
-        source: /** @type {ol.Coordinate} */ (preferences.map.getView().getCenter())
+        source: (preferences.map.getView().getCenter())
       });
       var zoom = ol.animation.zoom({
         resolution: preferences.map.getView().getResolution(),
@@ -283,6 +319,7 @@ angular.module('frontApp')
       preferences.map.beforeRender(zoom);
 
       preferences.view.fitExtent($scope.mejor_cluster.getGeometry().getExtent(),preferences.map.getSize());
+      */
       if($scope.hacer_todo){
         setTimeout($scope.pp,100);
       }
@@ -308,9 +345,11 @@ angular.module('frontApp')
       _.each($scope.poligonos_posibles,function(poligono_posible){
         $scope.source_pp.addFeature(poligono_posible);
       })
-      if($scope.hacer_todo){
-        $scope.mp();
-      }
+      setTimeout(function(){
+        if($scope.hacer_todo){
+          $scope.mp();
+        }
+      },0);
     }
 
     $scope.mejor_poligono = false;
@@ -320,9 +359,11 @@ angular.module('frontApp')
       if($scope.mejor_poligono != false){
         $scope.source_mp.addFeature($scope.mejor_poligono);
       }
-      if($scope.hacer_todo){
-        $scope.actualizar();
-      }
+      setTimeout(function(){
+        if($scope.hacer_todo){
+          $scope.actualizar();
+        }
+      },0);
     }
 
     $scope.actualizar = function(){
@@ -346,6 +387,10 @@ angular.module('frontApp')
     $scope.completo = function(){
       $scope.hacer_todo = true;
       $scope.mc();
+    }
+
+    $scope.pausa = function(){
+      $scope.hacer_todo = false;
     }
 
     if(!preferences.map){
