@@ -42,12 +42,13 @@ angular.module('frontApp')
         g: 0
       }
       _.each(clusters,function(k){
+        //Frontera actual con poligonos libres
         var frontera_k = calculos.frontera_actual(k,poligonos_asignados);
         //calculo todas las posibles fronteras
         _.each(vecinos,function(frontera,vecino_id){
           var vecino = poligonos[vecino_id];
           var frontera_k_i = calculos.frontera_con_poligono(cluster,vecino,poligonos_asignados);
-          var k_i_g = Math.abs((frontera_k-frontera_k_i)/frontera_k);
+          var k_i_g = (frontera_k-frontera_k_i)/frontera_k;
           if (k_i_g > mayor.g){
             mayor.cluster = k,
             mayor.g = k_i_g;
@@ -117,7 +118,7 @@ angular.module('frontApp')
       return calculos.g(cluster,clusters,poligonos,poligonos_asignados) + calculos.h(cluster);
     }
 
-    calculos.f1 = function(clusters,poligono,poligonos,semillas,poligonos_asignados){
+    calculos.f1 = function(cluster,clusters,poligono,poligonos,semillas,poligonos_asignados){
       return calculos.g1(clusters,poligono,poligonos,semillas,poligonos_asignados) + calculos.h(cluster);
     }
 
@@ -197,12 +198,12 @@ angular.module('frontApp')
       _.each(posibles_vecinos,function(vecino){
         fronteras_posibles.push({
           poligono: vecino,
-          g1: calculos.g1(clusters,vecino,poligonos,semillas,poligonos_asignados)
+          f1: calculos.f1(cluster,clusters,vecino,poligonos,semillas,poligonos_asignados)
         })
       });
 
       var mayor = _.min(fronteras_posibles,function(vecino){
-        return vecino.g1
+        return vecino.f1
       })
 
       var cluster_actual = mayor.poligono.get('_cluster') || false;
@@ -344,6 +345,7 @@ angular.module('frontApp')
     calculos.crear_cluster = function(feature){
       var cluster = new ol.Feature({
         geometry: feature.getGeometry(),
+        nombre: feature.get('NOMBRE'),
         _partes: [feature.getId()],
         _vecinos: feature.get('_vecinos')
       });
