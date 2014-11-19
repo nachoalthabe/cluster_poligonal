@@ -377,7 +377,7 @@ angular.module('frontApp')
       $scope.mejor_poligono = false;
       $scope.source_mp.clear();
 
-      if(_.size($scope.poligonos_asignados) < _.size($scope.features)){
+      if(_.size($scope.poligonos_asignados) < _.size($scope.features_map)){
         if($scope.hacer_todo){
           setTimeout(function(){
             $scope.mc();

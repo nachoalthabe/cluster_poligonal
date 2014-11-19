@@ -48,6 +48,10 @@ angular
         templateUrl: 'views/buscar_semillas.html',
         controller: 'BuscarSemillasCtrl'
       })
+      .when('/form/config_busqueda', {
+        templateUrl: 'views/form/config_busqueda.html',
+        controller: 'FormConfigBusquedaCtrl'
+      })
       .otherwise({
         redirectTo: '/'
       });
