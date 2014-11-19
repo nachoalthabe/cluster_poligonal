@@ -377,10 +377,12 @@ angular.module('frontApp')
       $scope.mejor_poligono = false;
       $scope.source_mp.clear();
 
-      if($scope.hacer_todo){
-        setTimeout(function(){
-          $scope.mc();
-        },100);
+      if(_.size($scope.poligonos_asignados) < _.size($scope.features)){
+        if($scope.hacer_todo){
+          setTimeout(function(){
+            $scope.mc();
+          },100);
+        }
       }
     }
 
