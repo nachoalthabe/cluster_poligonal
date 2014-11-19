@@ -8,7 +8,7 @@
  * Controller of the frontApp
  */
 angular.module('frontApp')
-  .controller('BuscarSemillasCtrl', function ($scope,$modal,preferences,features, calculos) {
+  .controller('BuscarSemillasCtrl', function ($scope,$modal,$log,preferences,features, calculos) {
     $scope.total = preferences.propiedad_suma_total;
     $scope.clusters_cantidad = preferences.cantidad_de_semillas;
     $scope.objetivo = preferences.propiedad_suma_total / preferences.cantidad_de_semillas;
@@ -26,7 +26,16 @@ angular.module('frontApp')
     }
 
     $scope.config = function(){
+      var modal = $modal.open({
+        templateUrl: 'views/form/config_busqueda.html',
+        controller: 'FormConfigBusquedaCtrl'
+      });
 
+      modal.result.then(function () {
+        $log.info('Modal exit at: ' + new Date());
+      }, function () {
+        $log.info('Modal dismissed at: ' + new Date());
+      });
     }
 
     $scope.addLayer= function(){
@@ -205,7 +214,7 @@ angular.module('frontApp')
       });
 
 
-      $scope.seleccionarSemillas(1);
+      $scope.seleccionarSemillas(preferences.delta_semillas);
     }
 
     $scope.clusters = [];
@@ -233,9 +242,15 @@ angular.module('frontApp')
 
     $scope.seleccionarSemillas = function(alpha){
       var radio_alpha = $scope.radio_preferencial * alpha;
-      $scope.featuresOrdenadas = $scope.ol_features.sort(function(a, b) {
-        return b.get('rating') - a.get('rating');
-      });
+      if(preferences.orden_semillas == 'max'){
+        $scope.featuresOrdenadas = $scope.ol_features.sort(function(a, b) {
+          return b.get('rating') - a.get('rating');
+        });
+      }else{
+        $scope.featuresOrdenadas = $scope.ol_features.sort(function(a, b) {
+          return a.get('rating') - b.get('rating');
+        });
+      }
 
       $scope.agregar_semilla($scope.featuresOrdenadas[0]);
 

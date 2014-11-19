@@ -8,10 +8,15 @@
  * Controller of the frontApp
  */
 angular.module('frontApp')
-  .controller('FormConfigBusquedaCtrl', function ($scope) {
-    $scope.awesomeThings = [
-      'HTML5 Boilerplate',
-      'AngularJS',
-      'Karma'
-    ];
+  .controller('FormConfigBusquedaCtrl', function ($scope,$modalInstance,preferences) {
+    $scope.preferences = preferences;
+    $scope.ok = function () {
+      preferences.persistir();
+      $modalInstance.close();
+    };
+
+    $scope.cancel = function () {
+      preferences.init();
+      $modalInstance.dismiss();
+    };
   });

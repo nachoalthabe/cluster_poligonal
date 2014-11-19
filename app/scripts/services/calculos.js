@@ -201,6 +201,27 @@ angular.module('frontApp')
       return false;
     }
 
+    //Crea huecos?
+    calculos.crea_huecos = function(cluster,poligono,poligonos){
+      var partes_id = _.clone(cluster.get('_partes')),
+          union = false;
+      partes_id.push(poligono.getId());
+      partes_id.forEach(function(id){
+        if(union == false){
+          union = features.feature_a_jsts(poligonos[id]);
+        }else{
+          union = union.union(features.feature_a_jsts(poligonos[id]));
+        }
+      })
+
+      if(union.getGeometryType() == 'Polygon'){
+        if (union.holes.length > 0){
+          return true
+        }
+      }
+      return false;
+    }
+
     var iteracion = 0;
     calculos.mejor_poligono = function(cluster,clusters,clusters_map,poligonos,semillas,poligonos_asignados,posibles_vecinos){
       var fronteras_posibles = [],
@@ -221,20 +242,30 @@ angular.module('frontApp')
 
       var cluster_actual = mayor.poligono.get('_cluster') || false;
 
-      if(cluster_actual != false){
-        if(calculos.rompe_continuidad(clusters_map[cluster_actual],mayor.poligono,poligonos)){
-          if(posibles_vecinos.length == 1){
-            return false
+      if(calculos.crea_huecos(cluster,mayor.poligono,poligonos)){
+        if(posibles_vecinos.length == 1){
+          return false
+        }
+        posibles_vecinos = posibles_vecinos.filter(function(poligono){
+          return !calculos.id_igual(poligono.getId(),mayor.poligono.getId());
+        })
+        resultado = calculos.mejor_poligono(cluster,clusters,clusters_map,poligonos,semillas,poligonos_asignados,posibles_vecinos)
+      }else{
+        if(cluster_actual != false){
+          if(calculos.rompe_continuidad(clusters_map[cluster_actual],mayor.poligono,poligonos)){
+            if(posibles_vecinos.length == 1){
+              return false
+            }
+            posibles_vecinos = posibles_vecinos.filter(function(poligono){
+              return !calculos.id_igual(poligono.getId(),mayor.poligono.getId());
+            })
+            resultado = calculos.mejor_poligono(cluster,clusters,clusters_map,poligonos,semillas,poligonos_asignados,posibles_vecinos)
+          }else{
+            resultado = mayor.poligono;
           }
-          posibles_vecinos = posibles_vecinos.filter(function(poligono){
-            return !calculos.id_igual(poligono.getId(),mayor.poligono.getId());
-          })
-          resultado = calculos.mejor_poligono(cluster,clusters,clusters_map,poligonos,semillas,poligonos_asignados,posibles_vecinos)
         }else{
           resultado = mayor.poligono;
         }
-      }else{
-        resultado = mayor.poligono;
       }
       return resultado;
     }

@@ -90,6 +90,12 @@ angular.module('frontApp')
       },{
         name: 'calculo_semillas',
         default: false
+      },{
+        name: 'delta_semillas',
+        default: 1
+      },{
+        name: 'orden_semillas',
+        default: 'max'
       }
     ]
 
