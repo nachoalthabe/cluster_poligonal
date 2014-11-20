@@ -163,6 +163,17 @@ angular.module('frontApp')
               }),
               stroke: new ol.style.Stroke({
                 color: [0,0,0,.8]
+              }),
+              text: new ol.style.Text({
+                font: '12px Calibri,sans-serif',
+                text: feature.get(preferences.propiedad_para_calcular) - preferences.propiedad_objetivo,
+                fill: new ol.style.Fill({
+                  color: '#000'
+                }),
+                stroke: new ol.style.Stroke({
+                  color: '#fff',
+                  width: 3
+                })
               })
             })];
           };

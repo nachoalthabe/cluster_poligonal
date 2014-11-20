@@ -49,7 +49,7 @@ angular.module('frontApp')
           var vecino = poligonos[vecino_id];
           var frontera_k_i = calculos.frontera_con_poligono(cluster,vecino,poligonos_asignados);
           var k_i_g = (frontera_k-frontera_k_i)/frontera_k;
-          if (k_i_g > mayor.g){
+          if (k_i_g < mayor.g){//Fix: Cambio sentido
             mayor.cluster = k,
             mayor.g = k_i_g;
           }
@@ -108,7 +108,7 @@ angular.module('frontApp')
         var id = parseInt(poligono.getId());
         if(pp_id.indexOf(id) >= 0){
           var frontera_nueva = calculos.frontera_con_poligono(cluster,poligono,poligonos_asignados);
-          resultado += (actual-frontera_nueva)/actual;
+          resultado += (actual > 0)?(actual-frontera_nueva)/actual:0;
         }
       });
       return resultado;
@@ -180,8 +180,13 @@ angular.module('frontApp')
     }
 
     //Todas las partes deven ser vecinas de otra parte
-    calculos.rompe_continuidad = function(cluster,poligono,poligonos){
-      var partes_id = cluster.get('_partes'),
+    calculos.rompe_continuidad = function(poligono,poligonos,clusters){
+      var cluster_id = poligono.get('_cluster') || false;
+      if(cluster_id == false)
+        return false;
+
+      var cluster = clusters[cluster_id],
+          partes_id = cluster.get('_partes'),
           union = false;
       partes_id.forEach(function(id){
         if(calculos.id_igual(id,poligono.getId()))
@@ -214,8 +219,17 @@ angular.module('frontApp')
         }
       })
 
+      if(poligono.getId() == 85){
+        console.log('Pila!');
+      }
+
       if(union.getGeometryType() == 'Polygon'){
         if (union.holes.length > 0){
+          return true
+        }
+      }
+      if(union.getGeometryType() == 'Geometry'){
+        if (union.geometries.length > 0){
           return true
         }
       }
@@ -236,13 +250,13 @@ angular.module('frontApp')
         })
       });
 
-      var mayor = _.min(fronteras_posibles,function(vecino){
+      var mayor = _.max(fronteras_posibles,function(vecino){
         return vecino.f1
       })
 
       var cluster_actual = mayor.poligono.get('_cluster') || false;
 
-      if(calculos.crea_huecos(cluster,mayor.poligono,poligonos)){
+      if(calculos.crea_huecos(cluster,mayor.poligono,poligonos) || calculos.rompe_continuidad(mayor.poligono,poligonos,clusters_map)){
         if(posibles_vecinos.length == 1){
           return false
         }
@@ -251,21 +265,7 @@ angular.module('frontApp')
         })
         resultado = calculos.mejor_poligono(cluster,clusters,clusters_map,poligonos,semillas,poligonos_asignados,posibles_vecinos)
       }else{
-        if(cluster_actual != false){
-          if(calculos.rompe_continuidad(clusters_map[cluster_actual],mayor.poligono,poligonos)){
-            if(posibles_vecinos.length == 1){
-              return false
-            }
-            posibles_vecinos = posibles_vecinos.filter(function(poligono){
-              return !calculos.id_igual(poligono.getId(),mayor.poligono.getId());
-            })
-            resultado = calculos.mejor_poligono(cluster,clusters,clusters_map,poligonos,semillas,poligonos_asignados,posibles_vecinos)
-          }else{
-            resultado = mayor.poligono;
-          }
-        }else{
-          resultado = mayor.poligono;
-        }
+        resultado = mayor.poligono;
       }
       return resultado;
     }
@@ -324,7 +324,8 @@ angular.module('frontApp')
 
     calculos.actualizar_cluster = function(cluster,poligonos){
       var partes_id = cluster.get('_partes'),
-          vecinos = {};
+          vecinos = {},
+          suma_propiedad = 0;
 
       var union = false;
       partes_id.forEach(function(id){
@@ -340,8 +341,10 @@ angular.module('frontApp')
         }else{
           union = union.union(features.feature_a_jsts(parte));
         }
+        suma_propiedad += parseInt(parte.get(preferences.propiedad_para_calcular));
       });
 
+      cluster.set(preferences.propiedad_para_calcular,suma_propiedad);
       cluster.set('_vecinos',vecinos);
       var new_feature = features.jsts_a_feature(union);
       cluster.setGeometry(new_feature.getGeometry());
