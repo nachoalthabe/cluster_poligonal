@@ -21,8 +21,8 @@ angular.module('frontApp')
     calculos.hp = function(cluster){
       var actual = cluster.get(preferences.propiedad_para_calcular),
           objetivo = preferences.propiedad_objetivo;
-      return Math.abs( ( objetivo - actual ) / objetivo );
-      //return ( objetivo - actual ) / objetivo;
+      //return Math.abs( ( objetivo - actual ) / objetivo );
+      return ( objetivo - actual ) / objetivo;
     }
 
     calculos.h = function(cluster){
@@ -49,7 +49,7 @@ angular.module('frontApp')
           var vecino = poligonos[vecino_id];
           var frontera_k_i = calculos.frontera_con_poligono(cluster,vecino,poligonos_asignados);
           var k_i_g = (frontera_k-frontera_k_i)/frontera_k;
-          if (k_i_g < mayor.g){//Fix: Cambio sentido
+          if (k_i_g > mayor.g){//Fix: Cambio sentido
             mayor.cluster = k,
             mayor.g = k_i_g;
           }
