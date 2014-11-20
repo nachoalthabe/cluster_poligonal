@@ -16,13 +16,16 @@ angular.module('frontApp')
           cuatro_pi = 4*Math.PI,
           area = jsts.getArea(),
           perimetro_cuadrado = Math.pow(jsts.getLength(),2);
-      return 1-( (cuatro_pi*area)/perimetro_cuadrado );
+      var response = 1-( (cuatro_pi*area)/perimetro_cuadrado );
+      console.log('hc',response);
+      return response;
     }
     calculos.hp = function(cluster){
       var actual = cluster.get(preferences.propiedad_para_calcular),
           objetivo = preferences.propiedad_objetivo;
-      //return Math.abs( ( objetivo - actual ) / objetivo );
-      return ( objetivo - actual ) / objetivo;
+      var response =  ( objetivo - actual ) / objetivo;
+      console.log('hp',response);
+      return response;
     }
 
     calculos.h = function(cluster){
@@ -60,17 +63,23 @@ angular.module('frontApp')
       return mayor.g;
     }
 
+    /*
+      Por cada vecino, si no esta asignado, sumo la frontera y la retorno
+    */
     calculos.frontera_actual = function(cluster,poligonos_asignados){
       var vecinos = _.clone(cluster.get('_vecinos')),
           frontera_suma = 0;
 
+      //Por cada vecino
       _.each(vecinos,function(frontera,vecino_id){
         vecino_id = parseInt(vecino_id);
+        //Si no esta asignado
         if(poligonos_asignados.indexOf(vecino_id) >= 0)
           return;
+        //Sumo la frontera
         frontera_suma += frontera;
       });
-
+      //retorno la suma
       return frontera_suma;
     };
 
@@ -79,20 +88,33 @@ angular.module('frontApp')
           partes = cluster.get('_partes'),
           poligono_vecinos = poligono.get('_vecinos'),
           frontera_suma = 0;
+      //Si no es posible vecino retorno 0
       if(typeof vecinos[poligono.getId()] == 'undefined')
         return 0;
+      //Por cada vecino del cluster incluido el poligono
+      //Simulo la nueva matris de vecindad
       _.each(poligono_vecinos,function(frontera,vecino_id){
         vecino_id = parseInt(vecino_id);
+        //Que no este asignado
         if(poligonos_asignados.indexOf(vecino_id) >= 0)
           return;
+        //Y que no sea parte del cluster
         if(partes.indexOf(vecino_id) >= 0)
           return;
+        //Le sumo la frontera
         vecinos[vecino_id] = (vecinos[vecino_id] || 0) + frontera;
       });
-      _.each(vecinos,function(frontera){
+
+      //Por cada vecino
+      _.each(vecinos,function(frontera,vecino_id){
+        vecino_id = parseInt(vecino_id);
+        //Si no esta asignado
+        if(poligonos_asignados.indexOf(vecino_id) >= 0)
+          return;
+        //Sumo la frontera
         frontera_suma += frontera;
       });
-
+      //retorno la suma
       return frontera_suma;
     };
 
@@ -115,7 +137,7 @@ angular.module('frontApp')
     }
 
     calculos.f = function(cluster,clusters,poligonos,poligonos_asignados){
-      return calculos.g(cluster,clusters,poligonos,poligonos_asignados) + calculos.h(cluster);
+      return calculos.h(cluster) + calculos.g(cluster,clusters,poligonos,poligonos_asignados);
     }
 
     calculos.f1 = function(cluster,clusters,poligono,poligonos,semillas,poligonos_asignados){
@@ -138,7 +160,7 @@ angular.module('frontApp')
         return mayores[0]; //Retorno el mejor
       }else{
         //Evaluo el que tenga mas poligonos libres vecinos
-        return  _.min(mayores,function(cluster){
+        return  _.max(mayores,function(cluster){
           //Cantidad de vecinos
           return _.size(cluster.get('_vecinos'));
         });
@@ -219,10 +241,6 @@ angular.module('frontApp')
         }
       })
 
-      if(poligono.getId() == 85){
-        console.log('Pila!');
-      }
-
       if(union.getGeometryType() == 'Polygon'){
         if (union.holes.length > 0){
           return true
@@ -253,8 +271,6 @@ angular.module('frontApp')
       var mayor = _.max(fronteras_posibles,function(vecino){
         return vecino.f1
       })
-
-      var cluster_actual = mayor.poligono.get('_cluster') || false;
 
       if(calculos.crea_huecos(cluster,mayor.poligono,poligonos) || calculos.rompe_continuidad(mayor.poligono,poligonos,clusters_map)){
         if(posibles_vecinos.length == 1){

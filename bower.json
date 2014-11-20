@@ -15,7 +15,9 @@
     "angular-bootstrap": "~0.11.2",
     "js-shapefile-to-geojson": "https://github.com/wavded/js-shapefile-to-geojson.git",
     "proj4": "~2.2.1",
-    "underscore": "~1.6.0"
+    "underscore": "~1.6.0",
+    "numeral": "~1.5.3",
+    "pleasejs": "git@github.com:nachoalthabe/PleaseJS.git#~0.4.2"
   },
   "devDependencies": {
     "angular-mocks": "1.2.16",

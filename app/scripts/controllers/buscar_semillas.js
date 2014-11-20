@@ -67,7 +67,16 @@ angular.module('frontApp')
 
       $scope.source_clusters_radios = new ol.source.Vector();
       $scope.layer_clusters_radios = new ol.layer.Vector({
-        source: $scope.source_clusters_radios
+        source: $scope.source_clusters_radios,
+        style: (function() {
+          return function(feature, resolution) {
+            return [new ol.style.Style({
+              fill: new ol.style.Fill({
+                color: [0,0,0,.3]
+              })
+            })];
+          };
+        })()
       })
       preferences.map.addLayer($scope.layer_clusters_radios);
 
@@ -157,16 +166,17 @@ angular.module('frontApp')
         source: $scope.source_clusters,
         style: (function() {
           return function(feature, resolution) {
+            var porcentaje = parseInt(feature.get(preferences.propiedad_para_calcular)) / preferences.propiedad_objetivo;
             return [new ol.style.Style({
               fill: new ol.style.Fill({
-                color: [255,255,255,.1]
+                color: feature.get('_color')
               }),
               stroke: new ol.style.Stroke({
                 color: [0,0,0,.8]
               }),
               text: new ol.style.Text({
                 font: '12px Calibri,sans-serif',
-                text: feature.get(preferences.propiedad_para_calcular) - preferences.propiedad_objetivo,
+                text: numeral(porcentaje).format('0.00%'),
                 fill: new ol.style.Fill({
                   color: '#000'
                 }),
@@ -224,6 +234,10 @@ angular.module('frontApp')
         $scope.source.addFeature(feature);
       });
 
+      $scope.cluster_colors = Please.make_color({
+	      colors_returned: preferences.cantidad_de_semillas, //set number of colors returned
+      });
+
 
       $scope.seleccionarSemillas(preferences.delta_semillas);
     }
@@ -241,6 +255,7 @@ angular.module('frontApp')
       $scope.semillas_id.push(feature.getId());
       $scope.agregar_poligono_asignado(feature);
       var cluster = calculos.crear_cluster(feature);
+      cluster.set('_color',$scope.cluster_colors.pop());
       $scope.clusters.push(cluster);
       $scope.clusters_map[cluster.getId()] = cluster;
     }
