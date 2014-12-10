@@ -17,13 +17,13 @@ angular.module('frontApp')
           area = jsts.getArea(),
           perimetro_cuadrado = Math.pow(jsts.getLength(),2);
       var response = 1-( (cuatro_pi*area)/perimetro_cuadrado );
-      return Math.abs(response);
+      return response;
     }
     calculos.hp = function(cluster){
       var actual = cluster.get(preferences.propiedad_para_calcular),
           objetivo = preferences.propiedad_objetivo;
       var response =  ( objetivo - actual ) / objetivo;
-      return Math.abs(response);
+      return response;
     }
 
     calculos.h = function(cluster){
