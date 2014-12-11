@@ -209,8 +209,10 @@ angular.module('frontApp')
           partes_id = cluster.get('_partes'),
           union = false;
       partes_id.forEach(function(id){
-        if(calculos.id_igual(id,poligono.getId()))
+        if(calculos.id_igual(id,poligono.getId())){
+          console.log('Sin',partes_id,id);
           return;
+        }
         if(union == false){
           union = features.feature_a_jsts(poligonos[id]);
         }else{
@@ -218,6 +220,7 @@ angular.module('frontApp')
         }
       })
 
+      console.log('Contiguidad',union.getGeometryType(),(union.geometries)?union.geometries.length:0);
       if(union.getGeometryType() == 'Polygon')
         return false;
       if(union.geometries.length > 1){
@@ -339,7 +342,7 @@ angular.module('frontApp')
       //Lo quito de la lista de poligonos del cluster
       var partes = cluster.get('_partes') || [];
       partes = _.filter(partes,function(id){
-        return (poligono.getId() != id);
+        return !calculos.id_igual(poligono.getId(),id);
       });
       cluster.set('_partes',partes);
 
@@ -417,6 +420,7 @@ angular.module('frontApp')
         _vecinos: feature.get('_vecinos')
       });
       cluster.setId(feature.getId());
+      feature.set('_cluster',cluster.getId());
       cluster.set(preferences.propiedad_para_calcular,feature.get(preferences.propiedad_para_calcular));
       return cluster;
     }
