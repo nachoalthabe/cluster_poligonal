@@ -48,7 +48,7 @@ angular.module('frontApp')
           })
         })
       });
-      preferences.map.addLayer($scope.layer_buffer);
+      //preferences.map.addLayer($scope.layer_buffer);
 
       $scope.source = new ol.source.Vector();
       $scope.layer = new ol.layer.Vector({
@@ -78,7 +78,7 @@ angular.module('frontApp')
           };
         })()
       })
-      preferences.map.addLayer($scope.layer_clusters_radios);
+      //preferences.map.addLayer($scope.layer_clusters_radios);
 
       $scope.event = new ol.interaction.Select();
       preferences.map.addInteraction($scope.event);
@@ -100,13 +100,12 @@ angular.module('frontApp')
           return function(feature, resolution) {
             return [new ol.style.Style({
               fill: new ol.style.Fill({
-                color: [255,255,0,.8]
+                color: [255,255,0,.2]
               })
             })];
           };
         })()
       });
-      preferences.map.addLayer($scope.layer_mc);
 
       $scope.source_pp = new ol.source.Vector();
       $scope.layer_pp = new ol.layer.Vector({
@@ -118,7 +117,7 @@ angular.module('frontApp')
                 color: [0,0,255,.2]
               }),
               stroke: new ol.style.Stroke({
-                color: [0,0,0,.5],
+                color: [0,0,0,.2],
                 width: 2
               })
             })];
@@ -190,6 +189,9 @@ angular.module('frontApp')
         })()
       });
       preferences.map.addLayer($scope.layer_clusters);
+
+      preferences.map.addLayer($scope.layer_pp);
+      preferences.map.addLayer($scope.layer_mc);
 
       $scope.initProcess();
     };

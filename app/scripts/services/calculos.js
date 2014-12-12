@@ -23,7 +23,7 @@ angular.module('frontApp')
       var actual = cluster.get(preferences.propiedad_para_calcular),
           objetivo = preferences.propiedad_objetivo;
       var response =  ( objetivo - actual ) / objetivo;
-      return response;
+      return Math.abs(response);
     }
 
     calculos.h = function(cluster){
@@ -194,7 +194,7 @@ angular.module('frontApp')
           union = false;
       partes_id.forEach(function(id){
         if(calculos.id_igual(id,poligono.getId())){
-          console.log('Sin',partes_id,id);
+          //console.log('Sin',partes_id,id);
           return;
         }
         if(union == false){
@@ -204,7 +204,7 @@ angular.module('frontApp')
         }
       })
 
-      console.log('Contiguidad',union.getGeometryType(),(union.geometries)?union.geometries.length:0);
+      //console.log('Contiguidad',union.getGeometryType(),(union.geometries)?union.geometries.length:0);
       if(union.getGeometryType() == 'Polygon')
         return false;
       if(union.geometries.length > 1){
@@ -380,7 +380,7 @@ angular.module('frontApp')
         return (pm_reg.iteracion == consecutivos);//si es consegutivo
             //&& (pm_reg.cluster != cluster_id);//y no es el mismo cluster
       });
-      return (pm_cant > 2);//Si llego al k-1 sin encontrarlo o con un salto en la secuencia
+      return (pm_cant > 7);//Si llego al k-1 sin encontrarlo o con un salto en la secuencia
     }
 
     calculos.cluster_sin_pm = function(clusters){
