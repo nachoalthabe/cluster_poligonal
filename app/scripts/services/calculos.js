@@ -11,23 +11,29 @@ angular.module('frontApp')
   .service('calculos', function calculos(preferences,features) {
     var calculos = {};
 
-    calculos.hc = function(cluster){
+    calculos.hc = function(cluster,poligono){
       var jsts = features.feature_a_jsts(cluster),
-          cuatro_pi = 4*Math.PI,
-          area = jsts.getArea(),
+          cuatro_pi = 4*Math.PI;
+      if(poligono || false){
+        jsts = jsts.union(features.feature_a_jsts(poligono));
+      }
+      var area = jsts.getArea(),
           perimetro_cuadrado = Math.pow(jsts.getLength(),2);
-      var response = 1-( (cuatro_pi*area)/perimetro_cuadrado );
+      var response = ( (cuatro_pi*area)/perimetro_cuadrado );
       return response;
     }
-    calculos.hp = function(cluster){
-      var actual = cluster.get(preferences.propiedad_para_calcular),
-          objetivo = preferences.propiedad_objetivo;
-      var response =  ( objetivo - actual ) / objetivo;
-      return Math.abs(response);
+    calculos.hp = function(cluster,poligono){
+      var actual = cluster.get(preferences.propiedad_para_calcular)
+      if(poligono || false){
+        actual += poligono.get(preferences.propiedad_para_calcular);
+      }
+      var objetivo = preferences.propiedad_objetivo;
+      var response = ( objetivo - actual ) / objetivo;
+      return response;
     }
 
-    calculos.h = function(cluster){
-      return calculos.hp(cluster) + calculos.hc(cluster) ;
+    calculos.h = function(cluster,poligono){
+      return calculos.hp(cluster,poligono) + calculos.hc(cluster,poligono) ;
     }
 
     //Calcular por todos los clusters el impacto de sumarles cada uno de los posibles vesinos del cluster a calcular.
@@ -72,7 +78,7 @@ angular.module('frontApp')
       _.each(vecinos,function(frontera,vecino_id){
         vecino_id = parseInt(vecino_id);
         //Si no esta asignado
-        if(poligonos_asignados.indexOf(vecino_id) >= 0)
+        if(poligonos_asignados.indexOf(parseInt(vecino_id)) >= 0)
           return;
         //Sumo la frontera
         frontera_suma += frontera;
@@ -98,7 +104,7 @@ angular.module('frontApp')
             parte_vecinos = parte.get('_vecinos');
 
         _.each(parte_vecinos,function(frontera,parte_vecino_id){
-          if(poligonos_asignados.indexOf(parte_vecino_id) >= 0)
+          if(poligonos_asignados.indexOf(parseInt(parte_vecino_id)) >= 0)
             return;
           frontera_suma += frontera;
         })
@@ -123,7 +129,7 @@ angular.module('frontApp')
     }
 
     calculos.f1 = function(cluster,clusters,poligono,poligonos,semillas,poligonos_asignados){
-      return calculos.g1(clusters,poligono,poligonos,semillas,poligonos_asignados) + calculos.h(cluster);
+      return calculos.g1(clusters,poligono,poligonos,semillas,poligonos_asignados) + calculos.h(cluster,poligono);
     }
 
 
@@ -215,6 +221,7 @@ angular.module('frontApp')
 
     //Crea huecos?
     calculos.crea_huecos = function(cluster,poligono,poligonos){
+      return false;
       var partes_id = _.clone(cluster.get('_partes')),
           union = false;
       partes_id.push(poligono.getId());
@@ -380,7 +387,7 @@ angular.module('frontApp')
         return (pm_reg.iteracion == consecutivos);//si es consegutivo
             //&& (pm_reg.cluster != cluster_id);//y no es el mismo cluster
       });
-      return (pm_cant > 7);//Si llego al k-1 sin encontrarlo o con un salto en la secuencia
+      return (pm_cant > 2);//Si llego al k-1 sin encontrarlo o con un salto en la secuencia
     }
 
     calculos.cluster_sin_pm = function(clusters){

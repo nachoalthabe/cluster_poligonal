@@ -165,7 +165,8 @@ angular.module('frontApp')
         source: $scope.source_clusters,
         style: (function() {
           return function(feature, resolution) {
-            var porcentaje = parseInt(feature.get(preferences.propiedad_para_calcular)) / preferences.propiedad_objetivo;
+            var porcentaje = parseInt(feature.get(preferences.propiedad_para_calcular)) / preferences.propiedad_objetivo,
+                id = feature.getId();
             return [new ol.style.Style({
               fill: new ol.style.Fill({
                 color: feature.get('_color')
@@ -426,6 +427,8 @@ angular.module('frontApp')
             $scope.mc();
           },100);
         }
+      }else{
+        $scope.hacer_todo = false;
       }
     }
 
