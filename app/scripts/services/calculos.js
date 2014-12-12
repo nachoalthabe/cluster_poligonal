@@ -48,7 +48,7 @@ angular.module('frontApp')
         //calculo todas las posibles fronteras
         _.each(vecinos,function(frontera,vecino_id){
           var vecino = poligonos[vecino_id];
-          var frontera_k_i = calculos.frontera_con_poligono(cluster,vecino,poligonos_asignados);
+          var frontera_k_i = calculos.frontera_con_poligono(cluster,vecino,poligonos,poligonos_asignados);
           var k_i_g = (frontera_k-frontera_k_i)/frontera_k;
           if (k_i_g > mayor.g){//Fix: Cambio sentido
             mayor.cluster = k,
@@ -81,36 +81,28 @@ angular.module('frontApp')
       return frontera_suma;
     };
 
-    calculos.frontera_con_poligono = function(cluster,poligono,poligonos_asignados){
-      var vecinos = _.clone(cluster.get('_vecinos')),
-          partes = cluster.get('_partes'),
+    calculos.frontera_con_poligono = function(cluster,poligono,poligonos,poligonos_asignados){
+      var vecinos = {},
+          partes = _.clone(cluster.get('_partes')),
           poligono_vecinos = poligono.get('_vecinos'),
           frontera_suma = 0;
-      //Si no es posible vecino retorno 0
+      //Si no es posible vecino retorno la frontera actual
       if(typeof vecinos[poligono.getId()] == 'undefined')
-        return 0;
+        return calculos.frontera_actual(cluster,poligonos_asignados);
+      //Agrego la nueva parte
+      partes.push(poligono.getId());
       //Por cada vecino del cluster incluido el poligono
       //Simulo la nueva matris de vecindad
-      _.each(poligono_vecinos,function(frontera,vecino_id){
-        vecino_id = parseInt(vecino_id);
-        //Que no este asignado
-        if(poligonos_asignados.indexOf(vecino_id) >= 0)
-          return;
-        //Y que no sea parte del cluster
-        if(partes.indexOf(vecino_id) >= 0)
-          return;
-        //Le sumo la frontera
-        vecinos[vecino_id] = (vecinos[vecino_id] || 0) + frontera;
-      });
+      partes_id.forEach(function(id){
+        var parte = poligonos[id],
+            parte_vecinos = parte.get('_vecinos');
 
-      //Por cada vecino
-      _.each(vecinos,function(frontera,vecino_id){
-        vecino_id = parseInt(vecino_id);
-        //Si no esta asignado
-        if(poligonos_asignados.indexOf(vecino_id) >= 0)
-          return;
-        //Sumo la frontera
-        frontera_suma += frontera;
+        _.each(parte_vecinos,function(frontera,parte_vecino_id){
+          if(poligonos_asignados.indexOf(parte_vecino_id) >= 0)
+            return;
+          frontera_suma += frontera;
+        })
+
       });
       //retorno la suma
       return frontera_suma;
@@ -120,16 +112,8 @@ angular.module('frontApp')
       var resultado = 0;
       _.each(clusters,function(cluster){
         var actual = calculos.frontera_actual(cluster,poligonos_asignados),
-            poligonos_posibles = calculos.poligonos_posibles(cluster,poligonos,semillas,poligonos_asignados),
-            pp_id = _.map(poligonos_posibles, function(poligono){
-              return poligono.getId();
-            });
-
-        var id = parseInt(poligono.getId());
-        if(pp_id.indexOf(id) >= 0){
-          var frontera_nueva = calculos.frontera_con_poligono(cluster,poligono,poligonos_asignados);
-          resultado += (actual > 0)?(actual-frontera_nueva)/actual:0;
-        }
+            posible = calculos.frontera_con_poligono(cluster,poligono,poligonos,poligonos_asignados);
+        resultado += (actual == 0)?0:(actual-posible)/actual;
       });
       return resultado;
     }
