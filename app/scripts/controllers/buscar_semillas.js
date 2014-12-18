@@ -165,7 +165,8 @@ angular.module('frontApp')
         source: $scope.source_clusters,
         style: (function() {
           return function(feature, resolution) {
-            var porcentaje = parseInt(feature.get(preferences.propiedad_para_calcular)) / preferences.propiedad_objetivo;
+            var porcentaje = parseInt(feature.get(preferences.propiedad_para_calcular)) / preferences.propiedad_objetivo,
+                id = feature.getId();
             return [new ol.style.Style({
               fill: new ol.style.Fill({
                 color: feature.get('_color')
@@ -346,7 +347,7 @@ angular.module('frontApp')
         clusters_local = $scope.clusters;
       }
       $scope.source_mc.clear();
-      $scope.mejor_cluster = calculos.mejor_cluster(clusters_local,$scope.features_map,$scope.poligonos_asignados);
+      $scope.mejor_cluster = calculos.mejor_cluster(clusters_local,$scope.features_map,$scope.poligonos_asignados,preferences.importancia_compacidad,preferences.importancia_poblacion);
       $scope.source_mc.addFeature($scope.mejor_cluster);
       /*
       var pan = ol.animation.pan({
@@ -398,7 +399,7 @@ angular.module('frontApp')
     $scope.mejor_poligono = false;
     $scope.mp = function(){
       $scope.source_mp.clear();
-      $scope.mejor_poligono = calculos.mejor_poligono($scope.mejor_cluster,$scope.clusters,$scope.clusters_map,$scope.features_map,$scope.semillas_id,$scope.poligonos_asignados,$scope.poligonos_posibles);
+      $scope.mejor_poligono = calculos.mejor_poligono($scope.mejor_cluster,$scope.clusters,$scope.clusters_map,$scope.features_map,$scope.semillas_id,$scope.poligonos_asignados,$scope.poligonos_posibles,preferences.importancia_compacidad,preferences.importancia_poblacion);
       if($scope.mejor_poligono != false){
         $scope.source_mp.addFeature($scope.mejor_poligono);
       }
@@ -426,6 +427,8 @@ angular.module('frontApp')
             $scope.mc();
           },100);
         }
+      }else{
+        $scope.hacer_todo = false;
       }
     }
 

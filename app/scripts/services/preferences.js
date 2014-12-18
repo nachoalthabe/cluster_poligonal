@@ -96,6 +96,12 @@ angular.module('frontApp')
       },{
         name: 'orden_semillas',
         default: 'max'
+      },{
+        name: 'importancia_compacidad',
+        default: 1
+      },{
+        name: 'importancia_poblacion',
+        default: 1
       }
     ]
 
