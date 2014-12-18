@@ -33,7 +33,7 @@ angular.module('frontApp')
     }
 
     calculos.h = function(cluster,poligono,importancia_compacidad,importancia_poblacion){
-      return (calculos.hp(cluster,poligono)*parseint(importancia_poblacion)) + (calculos.hc(cluster,poligono)*parseint(importancia_compacidad));
+      return (calculos.hp(cluster,poligono)*parseInt(importancia_poblacion)) + (calculos.hc(cluster,poligono)*parseInt(importancia_compacidad));
     }
 
     //Calcular por todos los clusters el impacto de sumarles cada uno de los posibles vesinos del cluster a calcular.
@@ -125,10 +125,10 @@ angular.module('frontApp')
     }
 
     calculos.f = function(cluster,clusters,poligonos,poligonos_asignados,importancia_compacidad,importancia_poblacion){
-      return calculos.h(cluster,importancia_compacidad,importancia_poblacion) + calculos.g(cluster,clusters,poligonos,poligonos_asignados);
+      return calculos.h(cluster,false,importancia_compacidad,importancia_poblacion) + calculos.g(cluster,clusters,poligonos,poligonos_asignados);
     }
 
-    calculos.f1 = function(cluster,clusters,poligono,poligonos,semillas,poligonos_asignados){
+    calculos.f1 = function(cluster,clusters,poligono,poligonos,semillas,poligonos_asignados,importancia_compacidad,importancia_poblacion){
       return calculos.g1(clusters,poligono,poligonos,semillas,poligonos_asignados) + calculos.h(cluster,poligono,importancia_compacidad,importancia_poblacion);
     }
 
@@ -139,9 +139,9 @@ angular.module('frontApp')
         return calculos.f(b,clusters,poligonos,poligonos_asignados,importancia_compacidad,importancia_poblacion) - calculos.f(a,clusters,poligonos,poligonos_asignados,importancia_compacidad,importancia_poblacion); //Desendiente
       });
 
-      var mayor = calculos.f(ordenados[0],clusters,poligonos,poligonos_asignados);
+      var mayor = calculos.f(ordenados[0],clusters,poligonos,poligonos_asignados,importancia_compacidad,importancia_poblacion);
       var mayores = ordenados.filter(function(a){
-        return (calculos.f(a,clusters,poligonos,poligonos_asignados) == mayor);
+        return (calculos.f(a,clusters,poligonos,poligonos_asignados,importancia_compacidad,importancia_poblacion) == mayor);
       });
 
       if(mayores.length == 1){
