@@ -74,33 +74,43 @@ angular.module('frontApp')
 
     var para_persistir = [{
         name: 'cantidad_de_semillas',
+        type: 'number',
         default: 8
       },{
         name: 'propiedad_para_calcular',
+        type: 'string',
         default: 'POB_2011'
       },{
         name: 'propiedad_suma_total',
+        type: 'number',
         default: 0
       },{
         name: 'propiedad_objetivo',
+        type: 'number',
         default: 0
       },{
         name: 'clusters',
+        type: 'array',
         default: []
       },{
         name: 'calculo_semillas',
+        type: 'boolean',
         default: false
       },{
         name: 'delta_semillas',
+        type: 'number',
         default: 1
       },{
         name: 'orden_semillas',
+        type: 'string',
         default: 'max'
       },{
         name: 'importancia_compacidad',
+        type: 'number',
         default: 1
       },{
         name: 'importancia_poblacion',
+        type: 'number',
         default: 1
       }
     ]
@@ -121,6 +131,8 @@ angular.module('frontApp')
     self.init = function(){
       para_persistir.forEach(function(propiedad){
         self[propiedad.name] = localStorage.getItem(propiedad.name) || propiedad.default;
+        if(propiedad.type === 'number')
+          self[propiedad.name] = parseInt(self[propiedad.name]);
       });
     }
 

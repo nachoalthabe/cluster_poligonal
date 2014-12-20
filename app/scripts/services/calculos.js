@@ -285,7 +285,7 @@ angular.module('frontApp')
         posibles_vecinos = posibles_vecinos.filter(function(poligono){
           return !calculos.id_igual(poligono.getId(),mayor.poligono.getId());
         })
-        resultado = calculos.mejor_poligono(cluster,clusters,clusters_map,poligonos,semillas,poligonos_asignados,posibles_vecinos)
+        resultado = calculos.mejor_poligono(cluster,clusters,clusters_map,poligonos,semillas,poligonos_asignados,posibles_vecinos,importancia_compacidad,importancia_poblacion)
       }else{
         resultado = mayor.poligono;
       }
